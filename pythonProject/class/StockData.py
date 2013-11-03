@@ -1,0 +1,297 @@
+# coding=utf-8
+__author__ = 'kk'
+
+__stockIndexCollection__ = 'stock_index'
+__serviceAddr__ = "127.0.0.1"
+__servicePort__ = 37017
+__cappedSize__ = 1572864  # 1.5Mb
+ShangHaiStockDB = 'SH'
+ShenZhenStockDB = 'SZ'
+import database_m
+
+__isTest__ = True  # #--正式环境时更改此变量为False
+import pprint
+
+
+def insertStock(db, collectionName, date, open, high, low, close, volume, adj_close):
+        return db[collectionName].insert({"date":date, "open":open, "high":high, "low":low, "close":close,
+                                          "volume":volume, "adj_close":adj_close})
+
+
+class StockDataClass:
+    def __init__(self, DBName,stockIndexCollectionName=__stockIndexCollection__):
+        self.stockIndexCollectionName = stockIndexCollectionName
+        self.db = None
+        self.curExchangeName = DBName
+        self.db_factory = database_m.DateBase_Factory(DBName)
+        if self.db_factory:
+            if __isTest__:
+                self.db = self.db_factory.doConnect()
+            else:
+                self.db = self.db_factory.doConnect(addr=__serviceAddr__, port=__servicePort__)
+
+    def __del__(self):
+        if self.db:
+            self.db = None
+        if self.db_factory:
+            self.db_factory.closeConnect()
+            self.db_factory = None
+        print('StockDataClass: dealloc')
+
+    def callback_stockDetail(self):
+        """
+        获取数据的回调，需要执行数据更新时必须先重载
+        获取外部数据统一的接口
+        根据实际情况自行设计
+        """
+        print('StockDataClass: warning, callback hasn`t rewrite')
+        raise NotImplementedError("callback hasn`t rewrite")
+
+    def callback_reset(self):
+        """
+        重置回调到未重载状态
+        """
+        print('StockDataClass: warning, callback hasn`t rewrite')
+        raise NotImplementedError("callback hasn`t rewrite")
+
+    def changeStockExchange(self, stockExchangeName):
+        """
+        更换交易所
+        :param stockExchangeName:
+        """
+        self.db = self.db_factory[stockExchangeName]
+        self.curExchangeName = stockExchangeName
+
+    #-------------stock---function----------------------------------
+    def getAllStockCollectionsName_list(self):
+        """
+        取得所有股票集合名
+        :return: list
+        """
+        if not self.db:
+            print 'StockDataClass: has no connection'
+            return None
+
+        collection_list = self.db.collection_names()
+        collection_list.remove('system.indexes')
+        collection_list.remove(self.stockIndexCollectionName)
+        return collection_list
+
+    def getAllStockCode_list(self):
+        """
+        取得所有股票代码
+        :return: list
+        """
+        if not self.db:
+            print 'StockDataClass: has no connection'
+            return None
+
+        stock_list = []
+        stock_cursor = self.db[self.stockIndexCollectionName].find({},{"code":1,"_id":0})
+        for stock in stock_cursor:
+            stock_list.append(stock['code'])
+        return stock_list
+
+    def initNewStockDetail(self):
+        """
+        更新新增股票(新股票)内容
+        所更新的内容取决于self.stockIndexCollectionName（或__stockIndexCollection__）表中count数量为0的股票代码
+        需要以foo(code, exchangeName) 重载callback_stockDetail(code)，结果是返回data列表，
+        需要确保数据日期无重复，否则将会报错
+        重载了self.db_factory.insertDoc = insertStock
+        所有重载函数完成后reset
+        每项股票内容顺序为date, open, high, low, close, volume, adj_close
+        :param code:
+        :return: the list of insert stock code
+        """
+        if not self.db:
+            print 'StockDataClass: has no connection'
+            return None
+
+        need2CreateCollection_Flag = False
+        insert_success_Flag = True
+        updated_stock_list = []
+
+        self.db_factory.insertDoc = insertStock
+
+        # #--find the stock which doesn`t has stockdetail
+        stock_cursor = self.db[self.stockIndexCollectionName].find({"count":0},{"_id":0})
+
+        # #--take the list of stock detail, and find out which stock detail collection hasn`t created
+        stock_collection_list = self.getAllStockCollectionsName_list()
+        print 'StockDataClass: new stock list :',stock_collection_list
+
+        for stock in stock_cursor:
+            insert_success_Flag = True
+            print "StockDataClass:", stock
+            code = stock['code']
+            try:
+                stock_collection_list.index(code)
+            except Exception, e:
+                print 'StockDataClass: find Collection error : %s' % e
+                print 'StockDataClass: it means %s is not Existing ' % code
+                need2CreateCollection_Flag = True
+            else:
+                print 'StockDataClass: %s is Existing' % code
+                need2CreateCollection_Flag = False
+            if need2CreateCollection_Flag:
+                # #--Create a collection()
+                # ret = self.db_factory.createCappedCollection(code, __cappedSize__)
+                ret = self.db_factory.createCollection(code)
+                if not ret:
+                    print 'StockDataClass: createCappedCollection false,continue'
+                    continue
+                # #--ceateIndex for date
+                print 'StockDataClass: %s:  create index = %s' % (code, self.db_factory.createIndex(code, "date"))
+
+            # #--request the stock detail from a callback funtion,
+            # self.callback_stockDetail must be rewrited
+            newStockDetail_list = self.callback_stockDetail(code, self.curExchangeName)
+            if not newStockDetail_list:
+                print 'StockDataClass: %s is load data error' % code
+                continue
+            # pprint.pprint(newStockDetail_list)
+
+            # #--inset new stock detail into collection
+            # #--date, open, high, low, close, volume, adj_close
+            for stock in newStockDetail_list:
+                # print 'StockDataClass: stock:', stock
+                try:
+                    ret = self.db_factory.insertDoc(self.db, code, stock[0], float(stock[1]),float(stock[2]),
+                                                    float(stock[3]), float(stock[4]), int(stock[5]), float(stock[6]))
+                except ValueError:
+                    print 'StockDataClass: %s -- changeValueError,' % code
+                    print stock
+                    break
+                # ret = self.db_factory.insertDoc(self.db, code, stock[0], stock[1],stock[2],
+                #                                 stock[3], stock[4], stock[5], stock[6])
+                if not ret:
+                    print 'StockDataClass: %s -- %s insert error,' % (code, stock[0])
+                    insert_success_Flag = False
+                    break
+                # print 'StockDataClass: insert sucess %s -- %s' % (code,stock[0])
+            # #--update stock_index: count,updateTime ect
+            count = self.db[code].count()
+            if count > 0:
+                # #--update stock_index
+                date_origin = self.db[code].find({},{"date":1,"_id":0}).sort("date", database_m.ASCENDING).limit(1).next()["date"]
+                last = self.db[code].find({},{"date":1,"close":1,"_id":0}).sort("date", database_m.DESCENDING).limit(1).next()
+                date_last = last["date"]
+                price_last = last["close"]
+                price_highest = self.db[code].find({},{"close":1,"_id":0}).sort("close", database_m.DESCENDING).limit(1).next()["close"]
+                highest_highest = self.db[code].find({},{"high":1,"_id":0}).sort("high", database_m.DESCENDING).limit(1).next()["high"]
+                if highest_highest > price_highest:
+                    price_highest = highest_highest
+                self.db[self.stockIndexCollectionName].update(
+                    {"code":code},
+                    {"$set":{"count":count, "date_origin":date_origin, "date_last":date_last,
+                             "price_last":price_last, "price_highest":price_highest}}
+                )
+            if insert_success_Flag:
+                updated_stock_list.append({"code":code, "count":count})  # #--resualt record
+         # #--reset callback function
+        self.callback_stockDetail = self.callback_reset
+        self.db_factory.insertDoc = self.db_factory.resetRewrite
+
+        return updated_stock_list
+
+    def insertFreshDateStockDetail_auto(self, code):
+        """
+        更新股票新增内容
+        需要重载callback_stockDetail(code, curExchangeName, date_last)，返回股票信息列表，
+        重载了self.db_factory.insertDoc = insertStock
+        所有重载函数结束后reset重载状态
+        返回信息必须保证全部新于数据库中的最后日期，并且无重复、日期递增排序
+        每项股票内容顺序为date, open, high, low, close, volume, adj_close
+        :return insert date list, 包括部分错误信息（如果有的话）
+        """
+        # #--get the date of last update
+        stockInfo = self.db[self.stockIndexCollectionName].find(
+            {"code":"600000"},{"date_last":1, "count":1, "_id":0}
+        ).next()
+        date_last = stockInfo["date_last"]
+        if not date_last or date_last == "0":
+            print 'StockDataClass: %s  load data_last error, you need to run init first' % code
+            return None
+        # #--get  the data of new stock detail
+        newStockDetail_list = self.callback_stockDetail(code, self.curExchangeName, date_last)
+        if newStockDetail_list is None:
+            print 'StockDataClass: %s  loads data error' % code
+            # #--reset callback function
+            self.callback_stockDetail = self.callback_reset
+            return None
+        if len(newStockDetail_list) == 0:
+            print 'StockDataClass: %s has not new data' % code
+            # #--reset callback function
+            self.callback_stockDetail = self.callback_reset
+            return None
+
+        # #--insert new data into database
+        insertCount = 0
+        count_last = stockInfo["count"]
+        insertNewDateList = []
+        insertAllSuccessFlag = True
+        self.db_factory.insertDoc = insertStock
+
+        for stock in newStockDetail_list:
+            # print 'StockDataClass: stock:', stock
+            try:
+                ret = self.db_factory.insertDoc(self.db, code, stock[0], float(stock[1]),float(stock[2]),
+                                                float(stock[3]), float(stock[4]), int(stock[5]), float(stock[6]))
+            except ValueError:
+                print 'StockDataClass: %s -- changeValueError,' % code
+                print stock
+                insertAllSuccessFlag = False
+                break
+            if not ret:
+                print 'StockDataClass: %s -- %s insert error,' % (code, stock[0])
+                insertAllSuccessFlag = False
+                break
+            insertCount += 1
+            insertNewDateList.append(stock[0])
+            # print 'StockDataClass: insert sucess %s -- %s' % (code,stock[0])
+
+        if insertCount == 0:
+            insertNewDateList.append("not all error")
+            self.db_factory.insertDoc = self.db_factory.resetRewrite
+            return insertNewDateList
+
+        # #--校验插入条目数量,只提出警告，不影响
+        final_db_count = self.db[code].count()
+        local_finally_count = count_last + insertCount
+        if final_db_count == local_finally_count:
+            print 'StockDataClass: %s success insert %d' % (code, insertCount)
+        else:
+            print 'StockDataClass: warning:%s insertCount: %d ,count_last: %d ,final_db_count: %d,' \
+                  'it should be %d' % (code, insertCount, count_last, final_db_count, local_finally_count)
+
+        # #--update stock_index
+        last = self.db[code].find({},{"date":1,"close":1,"_id":0}).sort("date", database_m.DESCENDING).limit(1).next()
+        date_last = last["date"]
+        price_last = last["close"]
+        price_highest = self.db[code].find({},{"close":1,"_id":0}).sort("close", database_m.DESCENDING).limit(1).next()["close"]
+        highest_highest = self.db[code].find({},{"high":1,"_id":0}).sort("high", database_m.DESCENDING).limit(1).next()["high"]
+        if highest_highest > price_highest:
+            price_highest = highest_highest
+            self.db[self.stockIndexCollectionName].update(
+                {"code":code},
+                {"$set":{"count":final_db_count, "date_last":date_last,
+                         "price_last":price_last, "price_highest":price_highest}}
+            )
+
+        # #--reset callback function
+        self.callback_stockDetail = self.callback_reset
+        self.db_factory.insertDoc = self.db_factory.resetRewrite
+
+        if not insertAllSuccessFlag:
+            insertNewDateList.append("not all success, process break out")
+        return insertNewDateList
+
+    def stock_test(self):
+        # self.db["600000"].insert({"date":"2013-10-05"})
+        pass
+        # StopIteration
+        # print self.db["600001"].find({},{"date":1,"_id":0}).sort("date", database_m.ASCENDING).limit(1).next()["date"]
+        # print self.db["600000"].find({},{"date":1,"_id":0}).sort("date", database_m.DESCENDING).limit(1).next()["date"]
+        # print self.db["600000"].find({"date":{"$gt":"2013-03-02","$lt":"2013-09"}}).next()
+
