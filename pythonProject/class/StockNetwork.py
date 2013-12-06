@@ -10,8 +10,10 @@ __history_SZ_exchange_extentName__ = 'sz'
 import httplib
 from HTMLParser import HTMLParser
 import time
+import data_parser
+import chardet
 import re
-
+##
 history_extentName_SH = __history_SH_exchange_extentName__
 history_extentName_SZ = __history_SZ_exchange_extentName__
 
@@ -62,8 +64,6 @@ def test():
     response_status = None
     response_content = None
     try:
-        # httpClient = httplib.HTTPConnection('www.sse.com.cn', 80, timeout=30)
-        # httpClient.request('GET', '/js/common/ssesuggestdataAll.js')
         # http://www.szse.cn/szseWeb/FrontController.szse?ACTIONID=8&CATALOGID=1110&TABKEY=tab2&ENCODE=1
         httpClient = httplib.HTTPConnection('www.szse.cn', 80, timeout=30)
         httpClient.request('GET', '/szseWeb/FrontController.szse?ACTIONID=8&CATALOGID=1110&TABKEY=tab2&ENCODE=1')
@@ -73,21 +73,62 @@ def test():
         print 'StockNetwork: response.status = %s' % response_status
         print 'StockNetwork: response.reason = %s' % response.reason
         response_content = response.read()
-        hp = MyParser()
-        hp.feed(response_content)
-        hp.close()
-        # print 'StockNetwork: response.content = %s' % response_content
+
+        # detect_dict = chardet.detect(response_content)
+        # print detect_dict
+        # confidence, encoding = detect_dict['confidence'], detect_dict['encoding']
+        # if 0.9 > confidence or encoding == None:
+        #     print u"无法准确识别编码"
+        # if encoding == 'GB2312':
+        response_content = response_content.decode('gbk').encode('utf8')
+
+        # hp = MyParser()
+        # hp.feed(response_content)
+        # hp.close()
+        print 'StockNetwork: response.content = %s' % response_content
     except Exception, e:
         print 'StockNetwork: error', e
     finally:
         print("StockNetwork: response finish")
-        if httpClient:
-            httpClient.close()
+
+    if httpClient:
+        httpClient.close()
 
     if response_status != 200:
         return None
     else:
         return response_content
+
+def getAllCode_SH():
+    httpClient = None
+    response_status = None
+    response_content = None
+    try:
+        httpClient = httplib.HTTPConnection('www.sse.com.cn', 80, timeout=30)
+        httpClient.request('GET', '/js/common/ssesuggestdataAll.js')
+        ##response是HTTPResponse对象
+        response = httpClient.getresponse()
+        response_status = response.status
+        print 'StockNetwork: response.status = %s' % response_status
+        print 'StockNetwork: response.reason = %s' % response.reason
+        response_content = response.read()
+        print 'StockNetwork: response.content = %s' % response_content
+    except Exception, e:
+        print 'StockNetwork: error', e
+    finally:
+        print("StockNetwork: response finish")
+
+    content_persered = data_parser.stock_code_SH_perser(response_content, isOnlyStock=True)
+    print 'StockNetwork: stock_code_SH_perser = ' , content_persered
+
+    if httpClient:
+        httpClient.close()
+
+    if response_status != 200:
+        return None
+    else:
+        return content_persered
+
 
 def _httpBase_Get(addr, port, timeout, extendStr):
     httpClient = None
