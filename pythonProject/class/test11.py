@@ -458,7 +458,7 @@ b="12.52"
 if b > a:a = b
 print a
 
-import chardet
-detect_dict = chardet.detect('sdsdsdsdsdsd')
-confidence, encoding = detect_dict['confidence'], detect_dict['encoding']
-print detect_dict
+# import chardet
+# detect_dict = chardet.detect('sdsdsdsdsdsd')
+# confidence, encoding = detect_dict['confidence'], detect_dict['encoding']
+# print detect_dict
