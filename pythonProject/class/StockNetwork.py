@@ -7,6 +7,7 @@ __history_cvs_port__ = 80
 __history_SH_exchange_extentName__ = 'ss'
 __history_SZ_exchange_extentName__ = 'sz'
 
+import sys
 import httplib
 from HTMLParser import HTMLParser
 import time
@@ -20,46 +21,8 @@ history_extentName_SZ = __history_SZ_exchange_extentName__
 # 公司代码	公司简称	公司全称	英文名称	注册地址	A股代码	A股简称	A股上市日期	A股总股本	A股流通股本
 # B股代码	B股 简 称	B股上市日期	B股总股本	B股流通股本	地 区	省 份	城 市	所属行业	公司网址
 
-class MyParser(HTMLParser):
-    """一个简单的HTMLparser的例子"""
 
-    def handle_decl(self, decl):
-        """处理头文档"""
-        # HTMLParser.handle_decl(self, decl)
-        print"处理头文档",  decl
-
-    def handle_starttag(self, tag, attrs):
-        """处理起始标签"""
-        # HTMLParser.handle_starttag(self, tag, attrs)
-        # if not HTMLParser.get_starttag_text(self).endswith("/>"):
-        print "处理起始标签", "<",tag,">", attrs
-
-    def handle_data(self, data):
-        """处理文本元素"""
-        # HTMLParser.handle_data(self, data)
-        print "处理文本元素", data.decode('gbk').encode('utf8'),
-
-    def handle_endtag(self, tag):
-        """处理结束标签"""
-        # HTMLParser.handle_endtag(self, tag)
-        # if not HTMLParser.get_starttag_text(self).endswith("/>"):
-        print "处理结束标签", "</",tag,">"
-
-    def handle_startendtag(self, tag, attrs):
-        """处理自闭标签"""
-        # HTMLParser.handle_startendtag(self, tag, attrs)
-        print "处理自闭标签", HTMLParser.get_starttag_text(self)
-
-    def handle_comment(self, data):
-        """处理注释"""
-        # HTMLParser.handle_comment(self, data)
-        print "处理注释", data
-
-    def close(self):
-        HTMLParser.close(self)
-        print "parser over"
-
-def test():
+def getAllCode_SZ():
     httpClient = None
     response_status = None
     response_content = None
@@ -74,18 +37,16 @@ def test():
         print 'StockNetwork: response.reason = %s' % response.reason
         response_content = response.read()
 
-        # detect_dict = chardet.detect(response_content)
-        # print detect_dict
-        # confidence, encoding = detect_dict['confidence'], detect_dict['encoding']
-        # if 0.9 > confidence or encoding == None:
-        #     print u"无法准确识别编码"
+        detect_dict = chardet.detect(response_content)
+        print detect_dict
+        confidence, encoding = detect_dict['confidence'], detect_dict['encoding']
+        if 0.9 > confidence or encoding == None:
+            print u"无法准确识别编码"
         # if encoding == 'GB2312':
-        response_content = response_content.decode('gbk').encode('utf8')
+        response_content = response_content.decode(encoding, 'ignore').encode('utf-8')
 
-        # hp = MyParser()
-        # hp.feed(response_content)
-        # hp.close()
-        print 'StockNetwork: response.content = %s' % response_content
+        content_persered = data_parser.stock_code_SZ_perser(response_content, isOnlyStock=False)
+        # print 'StockNetwork: stock_code_SZ_perser = ' , content_persered
     except Exception, e:
         print 'StockNetwork: error', e
     finally:
@@ -97,9 +58,14 @@ def test():
     if response_status != 200:
         return None
     else:
-        return response_content
+        return content_persered
+
 
 def getAllCode_SH():
+    """
+    :param
+   :return: a list which content dic like this: [{'abbreviation': 'pfyx', 'code': '600000', 'name': '\xe6\xb5\xa6\xe5\x8f\x91\xe9\x93\xb6\xe8\xa1\x8c'},]
+   """
     httpClient = None
     response_status = None
     response_content = None
@@ -172,6 +138,19 @@ def getHistoryByStartDate(code, history_extentName, start_date):
     return _httpBase_Get(__history_cvs_addr__, __history_cvs_port__, __timeout__, requestStr)
 
 if __name__ == '__main__':
-    test()
+     # print "resualt:", getAllCode_SH()
+    for item in getAllCode_SZ():
+        print item['companyCode']
+        print item['companyShortName']
+        print item['companyFullName']
+        print item['engName']
+        print item['ACode']
+        print item['AName']
+        print item['BName']
+        print item['province']
+        print item['HP']
+        print item['businessClassify']
+        print item['AStockCount']
+        print item['ACirculate']
     # print "resualt:",getAllHistory('600003', history_extentName_SH)
     # print "resualt:",getHistoryByStartDate('600000', history_extentName__SH, "2013-1-1")

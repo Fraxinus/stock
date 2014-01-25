@@ -29,10 +29,10 @@ def callback_stockDetail_newFromCode_list(code, exchangeName):
 def callback_stockDetail_newFromCodeAndLastDate_list(code, exchangeName, date_last):
     content = None
     if exchangeName == StockData.ShangHaiStockDB:
-        content = StockNetwork.getHistoryByStartDate(code, StockNetwork.history_extentName__SH, date_last)
+        content = StockNetwork.getHistoryByStartDate(code, StockNetwork.history_extentName_SH, date_last)
 
     if exchangeName == StockData.ShenZhenStockDB:
-        content = StockNetwork.getHistoryByStartDate(code, StockNetwork.history_extentName__SZ, date_last)
+        content = StockNetwork.getHistoryByStartDate(code, StockNetwork.history_extentName_SZ, date_last)
 
     if not content:
         return None
@@ -57,17 +57,17 @@ stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
 
 print "initNewStockDetail:"
 stockData.callback_stockDetail = callback_stockDetail_newFromCode_list
-print "resualt:",stockData.initNewStockDetail()
+print "resualt:", stockData.initNewStockDetail()
 
 # stockData.stock_test()
 
-# print 'insertNewDateStockDetail'
-# stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list
-# print "resualt:", stockData.insertFreshDateStockDetail_auto("600000")
-#
+print 'insertNewDateStockDetail'
+stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list
+print "resualt:", stockData.insertFreshDateStockDetail_auto("600000")
+
 #
 if stockData:
-    stockData
+    print stockData
     stockData = None
 
 

@@ -1,0 +1,36 @@
+cmd窗口的默认编码是GBK，但mongodb的字符编码都是utf-8，所以修改cmd窗口的编码为utf-8就可以了.
+如下：
+(1)chcp 65001
+(2)更改“属性”中的字体，除“点阵字体”外所有的都行
+再次运行就显示正常了。
+
+show dbs
+use dbxxxx
+show collections
+
+import pymongo
+conn = pymongo.Connection("127.0.0.1",27017)
+db = conn.test
+db.collection_names()
+for item in db.test.find({"name":"fake"}).sort("name",pymongo.ASCENDING):
+	item["a"]
+db.update({"name":"fake"},{"$set":{"a":"中文2".decode('gbk').encode('utf-8'),"email":"a@a.a"}})
+
+> db.$cmd.findOne({"collStats":"Store"})
+{
+       "ns" : "XXStore",
+       "count" : 38,
+       "size" : 42504,
+       "avgObjSize" : 1118.5263157894738,
+       "storageSize" : 4739072,
+       "numExtents" : 2,
+       "nindexes" : 1,
+       "lastExtentSize" : 4730880,
+       "paddingFactor" : 1.489999999999999,
+       "flags" : 1,
+       "totalIndexSize" : 8176,
+       "indexSizes" : {
+               "_id_" : 8176
+       },
+       "ok" : 1
+}
