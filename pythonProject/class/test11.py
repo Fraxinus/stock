@@ -462,3 +462,7 @@ print a
 # detect_dict = chardet.detect('sdsdsdsdsdsd')
 # confidence, encoding = detect_dict['confidence'], detect_dict['encoding']
 # print detect_dict
+B = {"name": "C#从入门到精通", "price": "23,7", "store": "卓越"}
+print B['price']
+c = B['price']
+print int((B['price'] or "0").replace(',', ""))

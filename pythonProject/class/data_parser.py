@@ -37,7 +37,7 @@ def stock_code_SH_perser(content=__test__, isOnlyStock=True):
         item = re.sub('val2:', '"name":', item)
         item = eval(re.sub('val3:', '"abbreviation":', item))
         if isOnlyStock:
-            if int(item['code']) >= 600000:
+            if (int(item['code']) >= 600000) and (int(item['code']) < 900000):
                 #item['name'] = item['name'].decode(sys.stdin.encoding).encode('utf8')
                 list.append(item)
         else:
@@ -101,10 +101,15 @@ def stock_code_SZ_perser(content=__test2__, isOnlyStock=True, list_tmp=None):
     for item in iteration:
         # print item
         count += 1
+        if count <= 20:
+            continue
+
         try:
             p = re.compile('<[^>]+>')
+            print item
             list_tmp.append(p.sub("", item).replace("\"", "\'"))
             if count % 20 == 0:
+                print list_tmp
                 stockInfo_str = '{"companyCode":"%s", "companyShortName":"%s", "companyFullName":"%s", "engName":"%s", "regAddr":"%s", \
                 "ACode":"%s", "AName":"%s", "AOrgDate":"%s", "AStockCount":"%s", "ACirculate":"%s", \
                 "BCode":"%s", "BName":"%s", "BOrgDate":"%s", "BStockCount":"%s", "BCirculate":"%s", \
@@ -155,4 +160,6 @@ if __name__ == '__main__':
         print item['businessClassify']
         print item['AStockCount']
         print item['ACirculate']
+        print item['BStockCount']
+        print item['BCirculate']
     f.close()

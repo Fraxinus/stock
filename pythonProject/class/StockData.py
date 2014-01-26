@@ -18,8 +18,35 @@ def insertStock(db, collectionName, date, open, high, low, close, volume, adj_cl
                                           "volume":volume, "adj_close":adj_close})
 
 
+def insertStockIndex(db, code, name,
+                     companyShortName, companyFullName, engName, regAddr,
+                     ACode, AName, AOrgDate, AStockCount, ACirculate,
+                     BCode, BName, BOrgDate, BStockCount, BCirculate,
+                     area, province, city, businessClassify, HP):
+        AStockCount_ = 0
+        ACirculate_ = 0
+        BStockCount_ = 0
+        BCirculate_ = 0
+        if AStockCount and len(AStockCount) != 0:
+            AStockCount_ = int(AStockCount.replace(',', ""))
+        if ACirculate and len(ACirculate) != 0:
+            ACirculate_ = int(BCirculate.replace(',', ""))
+        if BStockCount and len(BStockCount) != 0:
+            BStockCount_ = int(BStockCount.replace(',', ""))
+        if BCirculate and len(BCirculate) != 0:
+            BCirculate_ = int(BCirculate.replace(',', ""))
+
+        return db[__stockIndexCollection__].insert({"code":code, "name":name, "count":0, "date_origin":"", "date_last":"",
+                                          "price_highest":0.0, "price_last":0.0, "flag3":None, "flag4":None,
+                                          "flag5":None, "companyShortName":companyShortName, "companyFullName":companyFullName, "engName":engName,
+                                          "regAddr":regAddr, "ACode":ACode, "AName":AName, "AOrgDate":AOrgDate,
+                                          "AStockCount":AStockCount_, "ACirculate":ACirculate_, "BCode":BCode, "BName":BName,
+                                          "BOrgDate":BOrgDate, "BStockCount":BStockCount_, "BCirculate":BCirculate_, "area":area,
+                                          "province":province, "city":city, "businessClassify":businessClassify, "HP":HP})
+
+
 class StockDataClass:
-    def __init__(self, DBName,stockIndexCollectionName=__stockIndexCollection__):
+    def __init__(self, DBName, stockIndexCollectionName=__stockIndexCollection__):
         self.stockIndexCollectionName = stockIndexCollectionName
         self.db = None
         self.curExchangeName = DBName
@@ -63,6 +90,73 @@ class StockDataClass:
         self.curExchangeName = stockExchangeName
 
     #-------------stock---function----------------------------------
+    def stockIndexUpdate(self):
+        """
+        更新股票元数据
+        所更新的内容取决于self.stockIndexCollectionName（或__stockIndexCollection__）表中code还不存在的
+        需要以foo(exchangeName) 重载callback_stockDetail()，结果是返回metadataList列表，
+        重载了self.db_factory.insertDoc = insertStock
+        所有重载函数完成后reset
+        :return: codes in a list which has been insert into DB
+        """
+        if not self.db:
+            print 'StockDataClass: has no connection'
+            return None
+
+        metadataList = self.callback_stockDetail(self.curExchangeName)
+
+        self.db_factory.insertDoc = insertStockIndex
+
+        insert_success_List = []
+        for data in metadataList:
+            if self.curExchangeName == ShangHaiStockDB:
+                isExist = self.db[__stockIndexCollection__].find({"code":data['code']}).count()
+            else:
+                isExist = self.db[__stockIndexCollection__].find({"code":data['companyCode']}).count()
+
+            if isExist:
+                if self.curExchangeName == ShangHaiStockDB:
+                    print 'isExist :', data['code']
+                else:
+                    print 'isExist :', data['companyCode']
+
+                continue
+
+            try:
+                if self.curExchangeName == ShangHaiStockDB:
+                    ret = self.db_factory.insertDoc(self.db, data['code'], data['name'], data['abbreviation'],
+                                                    '', '', '',
+                                                    '', '', '', 0, 0,
+                                                    '', '', '', 0, 0,
+                                                    '', '', '', '', '')
+                else:
+                    ret = self.db_factory.insertDoc(self.db, data['companyCode'], data['companyShortName'], data['companyShortName'],
+                                                    data['companyFullName'], data['engName'], data['regAddr'],
+                                                    data['ACode'], data['AName'], data['AOrgDate'], data['AStockCount'], data['ACirculate'],
+                                                    data['BCode'], data['BName'], data['BOrgDate'], data['BStockCount'], data['BCirculate'],
+                                                    data['area'], data['province'], data['city'], data['businessClassify'], data['HP'])
+            except Exception, e:
+                ret = False
+                print 'StockDataClass stockIndexUpdate:', e
+
+            if not ret:
+                if self.curExchangeName == ShangHaiStockDB:
+                    print 'StockDataClass stockIndexUpdate: %s -- %s insert error,' % (data['code'], data['name'])
+                else:
+                    print 'StockDataClass stockIndexUpdate: %s -- %s insert error,' % (data['companyCode'], data['companyShortName'])
+                insert_success_Flag = False
+                break
+            if self.curExchangeName == ShangHaiStockDB:
+                insert_success_List.append(data['code'])
+            else:
+                insert_success_List.append(data['companyCode'])
+
+        # #--reset callback function
+        self.callback_stockDetail = self.callback_reset
+        self.db_factory.insertDoc = self.db_factory.resetRewrite
+        print len(insert_success_List)
+        return insert_success_List
+
     def getAllStockCollectionsName_list(self):
         """
         取得所有股票集合名
@@ -87,7 +181,7 @@ class StockDataClass:
             return None
 
         stock_list = []
-        stock_cursor = self.db[self.stockIndexCollectionName].find({},{"code":1,"_id":0})
+        stock_cursor = self.db[self.stockIndexCollectionName].find({}, {"code": 1, "_id": 0})
         for stock in stock_cursor:
             stock_list.append(stock['code'])
         return stock_list
@@ -119,7 +213,7 @@ class StockDataClass:
 
         # #--take the list of stock detail, and find out which stock detail collection hasn`t created
         stock_collection_list = self.getAllStockCollectionsName_list()
-        print 'StockDataClass: new stock list :',stock_collection_list
+        print 'StockDataClass: new stock list :', stock_collection_list
 
         for stock in stock_cursor:
             insert_success_Flag = True
@@ -207,7 +301,7 @@ class StockDataClass:
         """
         # #--get the date of last update
         stockInfo = self.db[self.stockIndexCollectionName].find(
-            {"code":"600000"},{"date_last":1, "count":1, "_id":0}
+            {"code":code},{"date_last":1, "count":1, "_id":0}
         ).next()
         date_last = stockInfo["date_last"]
         if not date_last or date_last == "0":
@@ -289,9 +383,15 @@ class StockDataClass:
 
     def stock_test(self):
         # self.db["600000"].insert({"date":"2013-10-05"})
-        pass
         # StopIteration
         # print self.db["600001"].find({},{"date":1,"_id":0}).sort("date", database_m.ASCENDING).limit(1).next()["date"]
         # print self.db["600000"].find({},{"date":1,"_id":0}).sort("date", database_m.DESCENDING).limit(1).next()["date"]
         # print self.db["600000"].find({"date":{"$gt":"2013-03-02","$lt":"2013-09"}}).next()
+        isExist = self.db[__stockIndexCollection__].find({"code":"600000"}).count()
+        if isExist:
+            print 'cunzai'
+        else:
+            print 'no cun zai '
+        print isExist
+        pass
 

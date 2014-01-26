@@ -11,7 +11,6 @@ import sys
 import httplib
 from HTMLParser import HTMLParser
 import time
-import data_parser
 import chardet
 import re
 ##
@@ -45,8 +44,6 @@ def getAllCode_SZ():
         # if encoding == 'GB2312':
         response_content = response_content.decode(encoding, 'ignore').encode('utf-8')
 
-        content_persered = data_parser.stock_code_SZ_perser(response_content, isOnlyStock=False)
-        # print 'StockNetwork: stock_code_SZ_perser = ' , content_persered
     except Exception, e:
         print 'StockNetwork: error', e
     finally:
@@ -58,7 +55,7 @@ def getAllCode_SZ():
     if response_status != 200:
         return None
     else:
-        return content_persered
+        return response_content
 
 
 def getAllCode_SH():
@@ -84,16 +81,13 @@ def getAllCode_SH():
     finally:
         print("StockNetwork: response finish")
 
-    content_persered = data_parser.stock_code_SH_perser(response_content, isOnlyStock=True)
-    print 'StockNetwork: stock_code_SH_perser = ' , content_persered
-
     if httpClient:
         httpClient.close()
 
     if response_status != 200:
         return None
     else:
-        return content_persered
+        return response_content
 
 
 def _httpBase_Get(addr, port, timeout, extendStr):

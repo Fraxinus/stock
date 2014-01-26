@@ -4,9 +4,11 @@ __author__ = 'kk'
 import StockData
 import StockNetwork
 import loader_CVS
+import data_parser
 
 
 def callback_stockDetail_newFromCode_list(code, exchangeName):
+    #initNewStockDetail
     content = None
     if exchangeName == StockData.ShangHaiStockDB:
         content = StockNetwork.getAllHistory(code, StockNetwork.history_extentName_SH)
@@ -27,6 +29,7 @@ def callback_stockDetail_newFromCode_list(code, exchangeName):
 
 
 def callback_stockDetail_newFromCodeAndLastDate_list(code, exchangeName, date_last):
+    #insertNewDateStockDetail
     content = None
     if exchangeName == StockData.ShangHaiStockDB:
         content = StockNetwork.getHistoryByStartDate(code, StockNetwork.history_extentName_SH, date_last)
@@ -46,12 +49,34 @@ def callback_stockDetail_newFromCodeAndLastDate_list(code, exchangeName, date_la
     return parse_list
 
 
+def callback_stockIndex_list(exchangeName):
+    #update stockIndex
+    content = None
+    content_persered = None
+    if exchangeName == StockData.ShangHaiStockDB:
+        content = StockNetwork.getAllCode_SH()
+        content_persered = data_parser.stock_code_SH_perser(content, isOnlyStock=True)
+
+    if exchangeName == StockData.ShenZhenStockDB:
+        content = StockNetwork.getAllCode_SZ()
+        content_persered = data_parser.stock_code_SZ_perser(content, isOnlyStock=False)
+
+    if not content or not content_persered:
+        print 'callback_stockIndex_list:not content or not content_persered'
+        return None
+    print 'callback_stockIndex_list:return content_persered'
+    return content_persered
 
 
 
 stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
 # stockData.changeStockExchange(StockData.ShenZhenStockDB)
 # print "collection_names:", stockData.db.collection_names()
+
+# print 'stockIndexUpdate'
+# stockData.callback_stockDetail = callback_stockIndex_list
+# print "resualt:", stockData.stockIndexUpdate()
+
 # print "getAllStockCollectionsName_list:", stockData.getAllStockCollectionsName_list()
 # print "getAllStockCode_list:", stockData.getAllStockCode_list()
 
@@ -61,9 +86,9 @@ print "resualt:", stockData.initNewStockDetail()
 
 # stockData.stock_test()
 
-print 'insertNewDateStockDetail'
-stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list
-print "resualt:", stockData.insertFreshDateStockDetail_auto("600000")
+# print 'insertNewDateStockDetail'
+# stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list
+# print "resualt:", stockData.insertFreshDateStockDetail_auto("600000")
 
 #
 if stockData:
