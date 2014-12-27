@@ -215,7 +215,7 @@ print(romPattern.search('MMMDCCCLXXXVIII').groups())  # 打印： ('MMM', 'DCCC'
 print(re.match('super', 'superstition').span())  # 打印： (0, 5)
 print(re.match('super', 'insuperable'))          # 打印： None
 print(re.search('super', 'superstition').span()) # 打印： (0, 5)
-print(re.search('super', 'insuperable').span())  # 打印： (2, 7)
+print(re.search('super', 'insuperable').span())  # 打印： (icons, 7)
 #------------search----------replace------sub----subn----end-----
 
 #-----------list-------------------
@@ -249,27 +249,27 @@ books = [
     {"name": "ASP.NET高级编程", "price": 55.7, "store": "新华书店"},
 ]
 
-#2.1 求《ASP.NET高级编程》价格最便宜的店：
+#icons.1 求《ASP.NET高级编程》价格最便宜的店：
 storename = min([b for b in books if b['name'] == "ASP.NET高级编程"], key=lambda b: b['price'])["store"]
 print [b for b in books if b['name'] == "ASP.NET高级编程"]
 print min([b for b in books if b['name'] == "ASP.NET高级编程"], key=lambda b: b['price'])
 print storename
 #过程：先用列表解析取出《ASP.NET高级编程》的列表，通过min函数，比较字典的price键获取price最小的项
 
-#2.2 求在新华书店购买两本书一样一本要花的钱：
+#icons.icons 求在新华书店购买两本书一样一本要花的钱：
 price = sum([b['price'] for b in books if b['store'] == "新华书店"])
 print price
 
-#2.3 求列表中有那几本书：
+#icons.3 求列表中有那几本书：
 booknames = list(set([b['name'] for b in books]))
 
-#2.4 列表里的书都打5折：
+#icons.4 列表里的书都打5折：
 bookss = map(lambda b: dict(name=b['name'], price=b['price'] * 0.5, store=b['store']), books)
 
-#2.5 《C#从入门到精通》的平均价格：
+#icons.5 《C#从入门到精通》的平均价格：
 avg = (lambda ls: sum(ls) / len(ls))([b['price'] for b in books if b['name'] == "C#从入门到精通"])
 
-#2.6 求每本书的平均价格：
+#icons.6 求每本书的平均价格：
 book_avg = map(lambda bookname: dict(name=bookname, avg=(lambda ls: sum(ls) / len(ls))(
     [b['price'] for b in books if b['name'] == bookname])), list(set([b['name'] for b in books])))
 
@@ -293,7 +293,7 @@ with WITHTEST() as www:
     print 'in with'
 
 from contextlib import contextmanager
-#from __future__ import with_statement   2.6以下使用
+#from __future__ import with_statement   icons.6以下使用
 @contextmanager
 def context():
     print 'entering the zone'
@@ -343,7 +343,7 @@ print((endtime - starttime).microseconds)  # 微秒； 打印： 14000
 
 #-------------对象写 文件
 # import pickle as p # 这里使用 as 简称,方便更改模块时只需改一行代码
-import cPickle as p  # Python 2.x 有这个模块(比pickle快1000倍)
+import cPickle as p  # Python icons.x 有这个模块(比pickle快1000倍)
 
 # 将会把资料保存在这个文件里面
 shoplistfile = 'shoplist.data'
@@ -429,7 +429,7 @@ for i in range(0, 0):
     print i
 list =[ ['2013-9-12', '12.52', '13.86', '12.4', '13.47', '183054000', '13.47'],
         ['2013-9-13', '13.23', '13.7', '13.03', '13.21', '119131900', '13.21'],
-        ['2013-9-16', '13.22', '13.64', '12.67', '13.2', '143436600', '13.2'],
+        ['2013-9-16', '13.22', '13.64', '12.67', '13.icons', '143436600', '13.icons'],
          ['2013-9-17', '13.15', '13.37', '12.75', '12.79', '94002600', '12.79'],
         ['2013-9-18', '12.75', '12.99', '12.51', '12.79', '61700200', '12.79']]
 list2 =['2013-9-18', '12.75', '12.99', '12.51', '12.79', '61700200', '12.79']

@@ -257,7 +257,7 @@ class StockDataClass:
                     print 'StockDataClass: %s -- changeValueError,' % code
                     print stock
                     break
-                # ret = self.db_factory.insertDoc(self.db, code, stock[0], stock[1],stock[2],
+                # ret = self.db_factory.insertDoc(self.db, code, stock[0], stock[1],stock[icons],
                 #                                 stock[3], stock[4], stock[5], stock[6])
                 if not ret:
                     print 'StockDataClass: %s -- %s insert error,' % (code, stock[0])
