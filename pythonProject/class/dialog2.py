@@ -25,7 +25,7 @@ class Dialog2(object):
         self.label = QtGui.QLabel(Dialog)  
         self.label.setGeometry(QtCore.QRect(180, 60, 54, 12))  
         self.label.setObjectName(_fromUtf8("label"))  
-        self.pushButton = QtGui.QPushButton(Dialog)  
+        self.pushButton = QtGui.QPushButton(Dialog)
         self.pushButton.setGeometry(QtCore.QRect(160, 140, 75, 23))  
         self.pushButton.setObjectName(_fromUtf8("pushButton"))  
   
@@ -33,20 +33,21 @@ class Dialog2(object):
         QtCore.QMetaObject.connectSlotsByName(Dialog)  
           
         #信号连接到指定槽  
-        self.pushButton.clicked.connect(self.on_pushButton_clicked)  
+        self.pushButton.clicked.connect(self.on_pushButton_clicked2)
           
     def retranslateUi(self, Dialog):  
         Dialog.setWindowTitle(_translate("Dialog", "Dialog", None))  
         self.label.setText(_translate("Dialog", "dialog2", None))  
         self.pushButton.setText(_translate("Dialog", "返回主窗体", None))  
           
-    def on_pushButton_clicked(self):  
+    def on_pushButton_clicked2(self):
+        print 'on_pushButton_clicked click dialog2'
         self.form .close()  
   
 if __name__ == "__main__":  
     import sys  
     app = QtGui.QApplication(sys.argv)  
-    Dialog = QtGui.QDialog()  
+    Dialog = QtGui.QDialog()
     ui = Dialog2()  
     ui.setupUi(Dialog)  
     Dialog.show()  

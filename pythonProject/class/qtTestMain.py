@@ -46,10 +46,10 @@ class MainWindow(QtGui.QWidget):
         self.label.setObjectName(_fromUtf8("label"))
 
 
-        self.layout2 = QtGui.QVBoxLayout(Form)
-        self.w = DrawWidget()
-        self.layout2.setGeometry(QtCore.QRect(10, 180, 360, 480))
-        self.layout2.addWidget(self.w)
+        # self.layout2 = QtGui.QVBoxLayout(Form)
+        # self.w = DrawWidget()
+        # self.layout2.setGeometry(QtCore.QRect(10, 180, 360, 480))
+        # self.layout2.addWidget(self.w)
 
 
         self.retranslateUi(Form)
@@ -69,6 +69,7 @@ class MainWindow(QtGui.QWidget):
         self.label.setText(_translate("Form", "主窗体", None))
         
     def on_pushButton_clicked(self):
+        print 'on_pushButton_clicked click'
         self.form.hide()
         Form1 = QtGui.QDialog()
         ui = Dialog1()
@@ -91,6 +92,7 @@ class MainWindow(QtGui.QWidget):
         Form1.show()
         Form1.exec_()
         self.form.show()
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

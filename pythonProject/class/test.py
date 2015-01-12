@@ -8,7 +8,10 @@ import data_parser
 
 
 def callback_stockDetail_newFromCode_list(code, exchangeName):
-    #initNewStockDetail
+    """
+    按代码更新的回调
+    stockData.callback_stockDetail的rewrite需求
+    """
     content = None
     if exchangeName == StockData.ShangHaiStockDB:
         content = StockNetwork.getAllHistory(code, StockNetwork.history_extentName_SH)
@@ -29,7 +32,10 @@ def callback_stockDetail_newFromCode_list(code, exchangeName):
 
 
 def callback_stockDetail_newFromCodeAndLastDate_list(code, exchangeName, date_last):
-    #insertNewDateStockDetail
+    """
+    按数据库最后时间更新code的内容的回调
+    stockData.callback_stockDetail的rewrite需求
+    """
     content = None
     if exchangeName == StockData.ShangHaiStockDB:
         content = StockNetwork.getHistoryByStartDate(code, StockNetwork.history_extentName_SH, date_last)
@@ -50,7 +56,10 @@ def callback_stockDetail_newFromCodeAndLastDate_list(code, exchangeName, date_la
 
 
 def callback_stockIndex_list(exchangeName):
-    #update stockIndex
+    """
+    更新index表的回调
+    StockData.callback_stockDetail的rewrite需求
+    """
     content = None
     content_persered = None
     if exchangeName == StockData.ShangHaiStockDB:

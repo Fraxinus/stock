@@ -125,15 +125,15 @@ class Window( QtGui.QWidget ):
             print 'yyyyyys'
 
     def OnAnimation(self):
-        print 'anima'
-        animation = QtCore.QPropertyAnimation(self.AnimationButton,  "geometry")
-        animation.setDuration(10000)
-        animation.setLoopCount(10)
-        animation.setStartValue(QtCore.QRect(200, 300, 50, 60))
-        # animation.setKeyValueAt(0.5, QtCore.QRect(240, 240, 100, 30));
-        animation.setEndValue(QtCore.QRect(100, 200, 20, 30))
-        # animation.setEasingCurve(QtCore.QEasingCurve.OutBounce)
-        animation.start()
+        # print 'anima'
+        # animation = QtCore.QPropertyAnimation(self.AnimationButton,  "geometry")
+        # animation.setDuration(10000)
+        # animation.setLoopCount(10)
+        # animation.setStartValue(QtCore.QRect(200, 300, 50, 60))
+        # # animation.setKeyValueAt(0.5, QtCore.QRect(240, 240, 100, 30));
+        # animation.setEndValue(QtCore.QRect(100, 200, 20, 30))
+        # # animation.setEasingCurve(QtCore.QEasingCurve.OutBounce)
+        # animation.start()
 
         dialog = MyDialog()
         r = dialog.exec_()
