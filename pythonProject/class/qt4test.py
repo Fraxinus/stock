@@ -142,6 +142,7 @@ class Window( QtGui.QWidget ):
             self.AnimationButton.setText( str(r) )
 
 # numpy.test(1,1)
+
 app = QtGui.QApplication( sys.argv )
 win = Window()
 win.show()
