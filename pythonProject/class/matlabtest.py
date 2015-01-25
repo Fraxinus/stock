@@ -4,8 +4,11 @@ from PyQt4 import QtGui, QtCore, uic
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as figureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import sys
+
+import prettyplotlib as ppl
 
 
 class DrawWidget(QtGui.QWidget):
@@ -24,13 +27,16 @@ class DrawWidget(QtGui.QWidget):
         # plt.xlabel('x')
         # plt.ylabel('y')
 
-        import prettyplotlib as ppl
-        # fig, ax = plt.subplots(1)
+        self.xxlineH = None
+        self.xxlineV = None
+        self.xxax = figure.gca()
+         # fig, ax = plt.subplots(1)
         # np.random.seed(14)
-        ppl.bar(plt.gca(), t, t, label=str('t, t'))
-        ppl.bar(plt.gca(),  t, t*2, label=str(' t, t*2'))
-        ppl.bar(plt.gca(), t, t**2, label=str('t, t**2'))
-        ppl.legend(plt.gca(), loc='lower left', ncol=4)
+        ppl.plot(figure.gca(), t, t, 'g--', label=str('t, t'), pickradius=28.0)
+        ppl.plot(figure.gca(),  t, t*2, label=str(' t, t*2'), pickradius=8.0)
+        ppl.plot(figure.gca(), t, t**2, label=str('t, t**2'), pickradius=8.0)
+        ppl.legend(figure.gca(), loc='upper left', ncol=3)
+
 
 
         # ax = plt.gca()#移动坐标轴
@@ -61,8 +67,24 @@ class DrawWidget(QtGui.QWidget):
         #     i.set_fontsize(15)
         #     i.set_bbox(dict(facecolor='white',edgecolor='none',alpha=0.65))
 
+        # 'button_press_event':鼠标按键按下时触发
+        # 'button_release_event':鼠标按键释放时触发
+        # 'motion_notify_event':鼠标移动时触发
+        # 当前的所有注册的响应函数可以通过Figure.canvas.callbacks.callbacks
+        for key, funcs in figure.canvas.callbacks.callbacks.iteritems():
+            print key
+            for cid, wrap in sorted(funcs.items()):
+                func = wrap.func
+                print "    {0}:{1}.{2}".format(cid, func.__module__, func)
 
+        self.text = figure.gca().text(0.5, 10.5, "event", ha="center", va="center", fontdict={"size":20})
         self.canvas = figureCanvas(figure)
+
+        self.canvas.setFocusPolicy( QtCore.Qt.ClickFocus) ##qt4需要加这两句，否者信号被qt拦截，无法到达matplot
+        self.canvas.setFocus()
+        figure.canvas.mpl_connect('key_press_event', self.on_key_press)
+        # figure.canvas.mpl_disconnect(figure.canvas.manager.key_press_handler_id)
+        figure.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
         self.canvas.draw()
 
         figure2 = plt.figure(2, figsize=(8, 4), facecolor='green', edgecolor='red')
@@ -117,6 +139,55 @@ class DrawWidget(QtGui.QWidget):
         layout = QtGui.QHBoxLayout(self)
         layout.addWidget(self.canvas)
         layout.addWidget(self.canvas2)
+
+    def on_mouse_move(self, event):
+        print event.name, ',', event.x, ',', event.y, ',', event.xdata, ',', event.ydata
+        if event.xdata and event.ydata:
+            info = "{}\nButton:{}\nFig x,y:{}, {}\nData x,y:{:3.2f}, {:3.2f}".format(
+                event.name, event.button, event.x, event.y, event.xdata, event.ydata)
+            self.text.set_text(info)
+
+        for line in self.xxax.lines:
+            if line.contains(event)[0]:
+                self.highlight(line)
+                break
+            else:
+                self.highlight(None)
+
+            #绘制准心
+            if not self.xxlineH:
+                print 'draw line'
+                self.xxlineH = self.xxax.plot([0, event.xdata], [event.ydata, event.ydata], 'k')[0]
+                self.xxlineV = self.xxax.plot([event.xdata, event.xdata], [0, event.ydata], 'k')[0]
+            else:
+                self.xxax.lines.remove(self.xxlineH)
+                self.xxax.lines.remove(self.xxlineV)
+                self.xxlineH = self.xxax.plot([0, event.xdata], [event.ydata, event.ydata], 'k')[0]
+                self.xxlineV = self.xxax.plot([event.xdata, event.xdata], [0, event.ydata], 'k')[0]
+                self.text.set_x(event.xdata)
+                self.text.set_y(event.ydata)
+            self.canvas.draw()
+
+    def on_key_press(self, event):
+            print event.key
+            # sys.stdout.flush()
+            if event.key == 'escape':
+                self.close()
+
+    def highlight(self, target):
+        need_redraw = False
+        if target is None:
+            for line in self.xxax.lines:
+                line.set_linewidth(1.0)
+                need_redraw = True
+        else:
+            for line in self.xxax.lines:
+                line.set_alpha(1.0)
+            need_redraw = True
+            target.set_linewidth(20.0)
+
+        if need_redraw:
+            self.xxax.figure.canvas.draw_idle()
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
