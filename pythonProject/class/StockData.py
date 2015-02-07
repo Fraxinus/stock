@@ -89,6 +89,16 @@ class StockDataClass:
         self.db = self.db_factory[stockExchangeName]
         self.curExchangeName = stockExchangeName
 
+    def isConnectSuccess(self):
+        if self.db:
+            return True
+        return False
+
+    def getServerIP(self):
+        if __isTest__:
+            return __serviceAddr__ + ':27017'
+        return __serviceAddr__ + ':' + __servicePort__
+
     #-------------stock---function----------------------------------
     def stockIndexUpdate(self):
         """
@@ -159,7 +169,7 @@ class StockDataClass:
 
     def getAllStockCollectionsName_list(self):
         """
-        取得所有股票集合名
+        取得所有股票文件的集合名
         :return: list
         """
         if not self.db:
@@ -185,6 +195,30 @@ class StockDataClass:
         for stock in stock_cursor:
             stock_list.append(stock['code'])
         return stock_list
+
+    def getStockInfo_dicORList(self, code=None):
+        """
+        取得股票整体信息
+        当code未设置时，返回全部信息
+        :return: list or dic
+        """
+        if not self.db:
+            print 'StockDataClass: has no connection'
+            return None
+
+        if code:
+            try:
+                return self.db[self.stockIndexCollectionName].find({"code": code}, {"_id": 0})[0]
+            except Exception, e:
+                print 'StockDataClass: getStockInfo error : %s' % e
+                print 'StockDataClass: maybe it means %s is not Existing ' % code
+                return None
+        else:
+            stock_list = []
+            stock_cursor = self.db[self.stockIndexCollectionName].find({}, {"_id": 0})
+            for stock in stock_cursor:
+                stock_list.append(stock)
+            return stock_list
 
     def initNewStockDetail(self):
         """

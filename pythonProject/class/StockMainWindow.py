@@ -8,6 +8,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
+import StockData
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -55,6 +56,10 @@ class Ui_MainWindow(object):
         self.searchSubmitBtn = QtGui.QPushButton(self.horizontalLayoutWidget)
         self.searchSubmitBtn.setObjectName(_fromUtf8("searchSubmitBtn"))
         self.horizontalLayout.addWidget(self.searchSubmitBtn)
+        self.testBtn = QtGui.QPushButton(self.horizontalLayoutWidget)
+        self.testBtn.setObjectName(_fromUtf8("testBtn"))
+        self.testBtn.clicked.connect(self.test)
+        self.horizontalLayout.addWidget(self.testBtn)
         spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem1)
         self.horizontalLayoutWidget_2 = QtGui.QWidget(self.centralwidget)
@@ -84,16 +89,21 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        self.window.connect(self.window, QtCore.SIGNAL('exit()'), QtCore.SLOT('close()'))
         self.centralwidget.resizeEvent = self.layoutautoResizeEvent
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
         self.searchEdit.setPlaceholderText(_translate("MainWindow", "code or name", None))
         self.searchSubmitBtn.setText(_translate("MainWindow", "search", None))
+        self.testBtn.setText(_translate("MainWindow", "test", None))
         self.statusLabels['status'].setText(_translate("MainWindow", "status", None))
         self.statusLabels['ip'].setText(_translate("MainWindow", "ip:未连接", None))
         self.statusLabels['exchange'].setText(_translate("MainWindow", "exchange:None", None))
         self.statusLabels['sector'].setText(_translate("MainWindow", "sector:default", None))
+
+    def __init__(self):
+        self.stockData = None
 
     def layoutautoResizeEvent(self, event):
         """
@@ -109,28 +119,32 @@ class Ui_MainWindow(object):
         startMenu = self.menubar.addMenu(_fromUtf8("开始"))
         # startMenu.hovered.connect(self.hoveredEvent)
         self.menuConnectAction = startMenu.addAction(_fromUtf8("连接数据库"))
-        self.menuConnectAction.triggered.connect(self.connectDB)
+        self.menuConnectAction.triggered.connect(self.menuConnectActionPress)
         self.menuDisconnectAction = startMenu.addAction(_fromUtf8("关闭数据库"))
-        self.menuDisconnectAction.triggered.connect(self.disconnectDB)
+        self.menuDisconnectAction.triggered.connect(self.menuDisconnectActionPress)
         self.menuDisconnectAction.setDisabled(True)
-        self.menuDisconnectAction = startMenu.addAction(_fromUtf8("设置"))
-        self.menuDisconnectAction.triggered.connect(self.setup)
+        self.menuSetUpAction = startMenu.addAction(_fromUtf8("设置"))
+        self.menuSetUpAction.triggered.connect(self.setup)
         startMenu.addSeparator()
         self.exitAction = startMenu.addAction(_fromUtf8( "退出"))
+        self.exitAction.setShortcut('Escape')
         self.exitAction.triggered.connect(self.exit)
 
         marketMenu = self.menubar.addMenu(_fromUtf8("市场"))
         self.menuMarketSHAction = marketMenu.addAction(_fromUtf8("上交所"))
-        # self.menuExchangeSHAction.triggered.connect(self.connectDB)
+        self.menuMarketSHAction.setCheckable(True)
+        self.menuMarketSHAction.setEnabled(False)
+        self.menuMarketSHAction.triggered.connect(self.menuMarketSHActionPress)
         self.menuMarketSZAction = marketMenu.addAction(_fromUtf8("深交所"))
-        # self.menuExchangeSZAction.triggered.connect(self.connectDB)
+        self.menuMarketSZAction.setCheckable(True)
+        self.menuMarketSZAction.setEnabled(False)
+        self.menuMarketSZAction.triggered.connect(self.menuMarketSZActionPress)
 
         sectorMenu = self.menubar.addMenu(_fromUtf8("板块"))
         self.menuSectorMenuAction = sectorMenu.addAction(_fromUtf8("default"))
         # self.menuExchangeSHAction.triggered.connect(self.connectDB)
         self.menuSectorAction = sectorMenu.addAction(_fromUtf8("2"))
         # self.menuExchangeSZAction.triggered.connect(self.connectDB)
-
 
     def _initStatusBar(self):
         self.statusbar.addPermanentWidget(self.statusLabels['status'], stretch=1)
@@ -146,7 +160,7 @@ class Ui_MainWindow(object):
             :keys contain: status/sector/exchange/ip
         :param message:
         """
-        def rebuildMessageContent(key, message):
+        def rebuildStatusMessageContent(key, message):
             return {
                 'status': message,
                 'sector': self.statusLabels[key].text().split(':')[0]+':'+message,
@@ -154,24 +168,66 @@ class Ui_MainWindow(object):
                 'ip': self.statusLabels[key].text().split(':')[0]+':'+message
                 }.get(key, None)
         try:
-            finalMessage = rebuildMessageContent(key, message)
+            finalMessage = rebuildStatusMessageContent(key, message)
         except Exception, e:
             print 'showStatusMessage:error %s' % e
             self.statusLabels['status'].setText(_translate("MainWindow", 'showStatusMessage:error %s' % e, None))
         else:
             self.statusLabels[key].setText(_translate("MainWindow", finalMessage, None))
 
-    def connectDB(self):
-        self.showStatusMessage('status', 'connect 2 db')
-        print 'connect'
-        self.menuConnectAction.setDisabled(True)
-        self.menuDisconnectAction.setEnabled(True)
+    def menuConnectActionPress(self):
+        print 'connect press'
+        self.stockData = self.connectDB()
+        if self.stockData:
+            self.showStatusMessage('status', 'connect db success')
+            self.menuConnectAction.setDisabled(True)
+            self.menuDisconnectAction.setEnabled(True)
+            self.menuMarketSHAction.setEnabled(True)
+            self.showStatusMessage('exchange', '上交所')
+            self.menuMarketSHAction.setChecked(True)
+            self.menuMarketSZAction.setEnabled(True)
+            self.showStatusMessage('ip', self.stockData.getServerIP())
+        else:
+            self.showStatusMessage('status', 'connect db fails')
 
-    def disconnectDB(self):
+    def connectDB(self):
+        stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
+        if not stockData.isConnectSuccess():
+            stockData = None
+        return stockData
+
+    def menuDisconnectActionPress(self):
+        print 'disconnect press'
+        self.disconnectDB()
         self.showStatusMessage('status', 'disconnectDB')
         self.menuConnectAction.setEnabled(True)
         self.menuDisconnectAction.setDisabled(True)
-        print 'disconnect'
+        self.showStatusMessage('exchange', "None")
+        self.menuMarketSHAction.setEnabled(False)
+        self.menuMarketSZAction.setEnabled(False)
+        self.menuMarketSHAction.setChecked(False)
+        self.menuMarketSZAction.setChecked(False)
+
+    def disconnectDB(self):
+        self.stockData = None
+
+    def menuMarketSHActionPress(self):
+        if self.menuMarketSZAction.isChecked():
+            self.menuMarketSZAction.setChecked(False)
+            self.showStatusMessage('exchange', "上交所")
+            self.stockData.changeStockExchange(StockData.ShangHaiStockDB)
+        else:
+            self.menuMarketSHAction.setChecked(True)
+            return
+
+    def menuMarketSZActionPress(self):
+        if self.menuMarketSHAction.isChecked():
+            self.menuMarketSHAction.setChecked(False)
+            self.showStatusMessage('exchange', "深交所")
+            self.stockData.changeStockExchange(StockData.ShenZhenStockDB)
+        else:
+            self.menuMarketSZAction.setChecked(True)
+            return
 
     def hoveredEvent(self, ationx):
         if ationx == self.menuConnectAction:
@@ -187,7 +243,16 @@ class Ui_MainWindow(object):
         pass
 
     def exit(self):
-        self.window.close()
+        print 'exit'
+        self.stockData = None
+        self.window.emit(QtCore.SIGNAL('exit()'))
+
+    def test(self):
+        print 'test'
+        stock_cursor = self.stockData.getStockInfo_dicORList()
+        for stock in stock_cursor:
+            print stock
+
 
 if __name__ == '__main__':
     import sys
