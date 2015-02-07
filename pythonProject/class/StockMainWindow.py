@@ -84,8 +84,8 @@ class Ui_MainWindow(object):
 
         # info = "  <font style='color: green;background: white;'>this is a test for change the fg & bg color ,text info</font>"
         # self.statueLabel.setText(info)
-        self._initMenuBar()
-        self._initStatusBar()
+        self.__initMenuBar()
+        self.__initStatusBar()
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -115,7 +115,7 @@ class Ui_MainWindow(object):
         self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(0, 490, event.size().width(), 61))
         self.menubar.setGeometry(QtCore.QRect(0, 0, event.size().width(), 23))
 
-    def _initMenuBar(self):
+    def __initMenuBar(self):
         startMenu = self.menubar.addMenu(_fromUtf8("开始"))
         # startMenu.hovered.connect(self.hoveredEvent)
         self.menuConnectAction = startMenu.addAction(_fromUtf8("连接数据库"))
@@ -146,7 +146,7 @@ class Ui_MainWindow(object):
         self.menuSectorAction = sectorMenu.addAction(_fromUtf8("2"))
         # self.menuExchangeSZAction.triggered.connect(self.connectDB)
 
-    def _initStatusBar(self):
+    def __initStatusBar(self):
         self.statusbar.addPermanentWidget(self.statusLabels['status'], stretch=1)
         self.statusbar.addPermanentWidget(self.statusLabels['sector'], stretch=0)
         self.statusbar.addPermanentWidget(self.statusLabels['exchange'], stretch=0)
@@ -177,7 +177,7 @@ class Ui_MainWindow(object):
 
     def menuConnectActionPress(self):
         print 'connect press'
-        self.stockData = self.connectDB()
+        self.stockData = self.__connectDB()
         if self.stockData:
             self.showStatusMessage('status', 'connect db success')
             self.menuConnectAction.setDisabled(True)
@@ -190,7 +190,7 @@ class Ui_MainWindow(object):
         else:
             self.showStatusMessage('status', 'connect db fails')
 
-    def connectDB(self):
+    def __connectDB(self):
         stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
         if not stockData.isConnectSuccess():
             stockData = None
@@ -198,7 +198,7 @@ class Ui_MainWindow(object):
 
     def menuDisconnectActionPress(self):
         print 'disconnect press'
-        self.disconnectDB()
+        self.__disconnectDB()
         self.showStatusMessage('status', 'disconnectDB')
         self.menuConnectAction.setEnabled(True)
         self.menuDisconnectAction.setDisabled(True)
@@ -208,7 +208,7 @@ class Ui_MainWindow(object):
         self.menuMarketSHAction.setChecked(False)
         self.menuMarketSZAction.setChecked(False)
 
-    def disconnectDB(self):
+    def __disconnectDB(self):
         self.stockData = None
 
     def menuMarketSHActionPress(self):
@@ -252,6 +252,7 @@ class Ui_MainWindow(object):
         stock_cursor = self.stockData.getStockInfo_dicORList()
         for stock in stock_cursor:
             print stock
+
 
 
 if __name__ == '__main__':
