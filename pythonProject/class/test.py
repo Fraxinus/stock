@@ -89,11 +89,19 @@ stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
 # print "getAllStockCollectionsName_list:", stockData.getAllStockCollectionsName_list()
 # print "getAllStockCode_list:", stockData.getAllStockCode_list()
 
-print "initNewStockDetail:"
-stockData.callback_stockDetail = callback_stockDetail_newFromCode_list
-print "resualt:", stockData.initNewStockDetail()
+# print "initNewStockDetail:"
+# stockData.callback_stockDetail = callback_stockDetail_newFromCode_list
+# print "resualt:", stockData.initNewStockDetail()
 
 # stockData.stock_test()
+
+print 'insertNewDateStockDetail'
+code_list = stockData.getAllStockCollectionsName_list()
+print code_list
+for code in code_list:
+    stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list
+    print "results:", stockData.insertFreshDateStockDetail_auto(code)
+
 
 # print 'insertNewDateStockDetail'
 # stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list

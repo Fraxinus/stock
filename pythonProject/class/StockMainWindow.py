@@ -249,9 +249,17 @@ class Ui_MainWindow(object):
 
     def test(self):
         print 'test'
-        stock_cursor = self.stockData.getStockInfo_dicORList()
-        for stock in stock_cursor:
-            print stock
+        # stock_cursor = self.stockData.getStockInfo_dicORList()
+        # for stock in stock_cursor:
+        #     print stock
+
+        # import httplib2
+        # import socks
+        # h = httplib2.Http(proxy_info = httplib2.ProxyInfo(socks.PROXY_TYPE_SOCKS5, '127.0.0.1', 1080))
+        # r,c = h.request("http://table.finance.yahoo.com/table.csv?s=601318.ss")
+        # print r
+        # print c
+
 
 
 
