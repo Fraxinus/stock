@@ -9,6 +9,8 @@
 
 from PyQt4 import QtCore, QtGui
 import StockData
+import threading
+import functools
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -25,6 +27,20 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
+QtCore.QTextCodec.setCodecForTr(QtCore.QTextCodec.codecForName("utf8"))
+__enumError__ = -1
+
+
+def async(wrapped):
+        def wrapper(*args, **kwargs):
+            t = threading.Thread(target=wrapped, args=args, kwargs=kwargs)
+            t.daemon = True
+            t.start()
+
+        functools.update_wrapper(wrapper, wrapped)
+        return wrapper
+
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -39,9 +55,9 @@ class Ui_MainWindow(object):
         self.verticalLayout = QtGui.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setMargin(0)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.stockCView = QtGui.QColumnView(self.verticalLayoutWidget)
-        self.stockCView.setObjectName(_fromUtf8("stockCView"))
-        self.verticalLayout.addWidget(self.stockCView)
+        self.stockTable = QtGui.QTableWidget(self.verticalLayoutWidget)
+        self.stockTable.setObjectName(_fromUtf8("stockCView"))
+        self.verticalLayout.addWidget(self.stockTable)
         self.horizontalLayoutWidget = QtGui.QWidget(self.centralwidget)
         self.horizontalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 811, 61))
         self.horizontalLayoutWidget.setObjectName(_fromUtf8("horizontalLayoutWidget"))
@@ -81,11 +97,16 @@ class Ui_MainWindow(object):
         self.statusLabels['exchange'] = QtGui.QLabel(MainWindow)
         self.statusLabels['sector'] = QtGui.QLabel(MainWindow)
         self.statusLabels['status'] = QtGui.QLabel(MainWindow)
+        self.statusProgressBar = QtGui.QProgressBar(MainWindow)
+        self.statusProgressBar.setObjectName(_fromUtf8("statusProgressBar"))
+        MainWindow.closeEvent = self.closeEvent
+
 
         # info = "  <font style='color: green;background: white;'>this is a test for change the fg & bg color ,text info</font>"
         # self.statueLabel.setText(info)
-        self.__initMenuBar()
-        self.__initStatusBar()
+        self._initMenuBar()
+        self._initStatusBar()
+        self._initTableView()
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -111,11 +132,11 @@ class Ui_MainWindow(object):
         :param event:
         """
         self.horizontalLayoutWidget.setGeometry(QtCore.QRect(0, 0, event.size().width(), 61))
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 60, event.size().width()-10, 431))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 60, event.size().width() - 10, 431))
         self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(0, 490, event.size().width(), 61))
         self.menubar.setGeometry(QtCore.QRect(0, 0, event.size().width(), 23))
 
-    def __initMenuBar(self):
+    def _initMenuBar(self):
         startMenu = self.menubar.addMenu(_fromUtf8("开始"))
         # startMenu.hovered.connect(self.hoveredEvent)
         self.menuConnectAction = startMenu.addAction(_fromUtf8("连接数据库"))
@@ -126,7 +147,7 @@ class Ui_MainWindow(object):
         self.menuSetUpAction = startMenu.addAction(_fromUtf8("设置"))
         self.menuSetUpAction.triggered.connect(self.setup)
         startMenu.addSeparator()
-        self.exitAction = startMenu.addAction(_fromUtf8( "退出"))
+        self.exitAction = startMenu.addAction(_fromUtf8("退出"))
         self.exitAction.setShortcut('Escape')
         self.exitAction.triggered.connect(self.exit)
 
@@ -146,11 +167,60 @@ class Ui_MainWindow(object):
         self.menuSectorAction = sectorMenu.addAction(_fromUtf8("2"))
         # self.menuExchangeSZAction.triggered.connect(self.connectDB)
 
-    def __initStatusBar(self):
+    def _initStatusBar(self):
+        # self.statusProgressBar.setGeometry(QtCore.QRect(0, 0, 50, 23))
+        self.statusbar.addPermanentWidget(self.statusProgressBar, stretch=2)
+        self.statusProgressBar.setMinimum(0)
+        self.statusProgressBar.setVisible(False)
         self.statusbar.addPermanentWidget(self.statusLabels['status'], stretch=1)
         self.statusbar.addPermanentWidget(self.statusLabels['sector'], stretch=0)
         self.statusbar.addPermanentWidget(self.statusLabels['exchange'], stretch=0)
         self.statusbar.addPermanentWidget(self.statusLabels['ip'], stretch=0)
+
+    def _initTableView(self):
+        self.stockTable.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.stockTable.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.stockTable.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        self.window.connect(self.stockTable, QtCore.SIGNAL("itemClicked(QTableWidgetItem*)"),
+                            self.stockTBItemClick)
+        # self.connect(self.stockTBView, QtCore.SIGNAL("cellDoubleClicked (int,int)"), self.stockTBItemClick)
+        self.window.connect(self.stockTable, QtCore.SIGNAL("itemDoubleClicked(QTableWidgetItem*)"),
+                            self.stockTBItemDoubleClick)
+        ##max columnCount==30
+        self.stockTable.setColumnCount(17)
+        self.stockTable.setRowCount(100)
+        self.stockTable.setHorizontalHeaderLabels(['name', 'price_last', 'price_highest', 'date_origin', 'date_last',
+                                                   'businessClassify', 'count', 'ACirculate', 'AStockCount',
+                                                   'companyShortName', 'companyFullName', 'area', 'province', 'city', 'HP',
+                                                   'regAddr', 'engName'])
+        index = self.enumStockTableColumn('name')
+        width = self.stockTable.columnWidth(index) - 20
+        self.stockTable.setColumnWidth(index, width)
+        index = self.enumStockTableColumn('price_last')
+        width = self.stockTable.columnWidth(index) - 16
+        self.stockTable.setColumnWidth(index, width)
+        index = self.enumStockTableColumn('price_highest')
+        width = self.stockTable.columnWidth(index) - 16
+        self.stockTable.setColumnWidth(index, width)
+        index = self.enumStockTableColumn('date_origin')
+        width = self.stockTable.columnWidth(index) - 16
+        self.stockTable.setColumnWidth(index, width)
+        index = self.enumStockTableColumn('date_last')
+        width = self.stockTable.columnWidth(index) - 16
+        self.stockTable.setColumnWidth(index, width)
+
+    def enumStockTableColumn(self, key):
+        """
+            get the column num by the name of column
+            :param key:the name of column
+            :return:is int,the column num
+            """
+        return {
+            'name': 0, 'price_last': 1, 'price_highest': 2, 'date_origin': 3, 'date_last': 4,
+            'businessClassify': 5, 'count': 6, 'ACirculate': 7, 'AStockCount': 8,
+            'companyShortName': 9, 'companyFullName': 10, 'area': 11, 'province': 12, 'city': 13, 'HP': 14,
+            'regAddr': 15, 'engName': 16
+        }.get(key, __enumError__)
 
     def showStatusMessage(self, key, message):
         """
@@ -160,15 +230,17 @@ class Ui_MainWindow(object):
             :keys contain: status/sector/exchange/ip
         :param message:
         """
-        def rebuildStatusMessageContent(key, message):
+
+        def _rebuildStatusMessageContent(key, message):
             return {
                 'status': message,
-                'sector': self.statusLabels[key].text().split(':')[0]+':'+message,
-                'exchange': self.statusLabels[key].text().split(':')[0]+':'+message,
-                'ip': self.statusLabels[key].text().split(':')[0]+':'+message
-                }.get(key, None)
+                'sector': self.statusLabels[key].text().split(':')[0] + ':' + message,
+                'exchange': self.statusLabels[key].text().split(':')[0] + ':' + message,
+                'ip': self.statusLabels[key].text().split(':')[0] + ':' + message
+            }.get(key, None)
+
         try:
-            finalMessage = rebuildStatusMessageContent(key, message)
+            finalMessage = _rebuildStatusMessageContent(key, message)
         except Exception, e:
             print 'showStatusMessage:error %s' % e
             self.statusLabels['status'].setText(_translate("MainWindow", 'showStatusMessage:error %s' % e, None))
@@ -177,7 +249,7 @@ class Ui_MainWindow(object):
 
     def menuConnectActionPress(self):
         print 'connect press'
-        self.stockData = self.__connectDB()
+        self.stockData = self._connectDB()
         if self.stockData:
             self.showStatusMessage('status', 'connect db success')
             self.menuConnectAction.setDisabled(True)
@@ -187,18 +259,13 @@ class Ui_MainWindow(object):
             self.menuMarketSHAction.setChecked(True)
             self.menuMarketSZAction.setEnabled(True)
             self.showStatusMessage('ip', self.stockData.getServerIP())
+            self.updateStockTableProgress()
         else:
             self.showStatusMessage('status', 'connect db fails')
 
-    def __connectDB(self):
-        stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
-        if not stockData.isConnectSuccess():
-            stockData = None
-        return stockData
-
     def menuDisconnectActionPress(self):
         print 'disconnect press'
-        self.__disconnectDB()
+        self._disconnectDB()
         self.showStatusMessage('status', 'disconnectDB')
         self.menuConnectAction.setEnabled(True)
         self.menuDisconnectAction.setDisabled(True)
@@ -208,14 +275,12 @@ class Ui_MainWindow(object):
         self.menuMarketSHAction.setChecked(False)
         self.menuMarketSZAction.setChecked(False)
 
-    def __disconnectDB(self):
-        self.stockData = None
-
     def menuMarketSHActionPress(self):
         if self.menuMarketSZAction.isChecked():
             self.menuMarketSZAction.setChecked(False)
             self.showStatusMessage('exchange', "上交所")
             self.stockData.changeStockExchange(StockData.ShangHaiStockDB)
+            self.updateStockTableProgress()
         else:
             self.menuMarketSHAction.setChecked(True)
             return
@@ -225,9 +290,64 @@ class Ui_MainWindow(object):
             self.menuMarketSHAction.setChecked(False)
             self.showStatusMessage('exchange', "深交所")
             self.stockData.changeStockExchange(StockData.ShenZhenStockDB)
+            self.updateStockTableProgress()
         else:
             self.menuMarketSZAction.setChecked(True)
             return
+
+    def stockTBItemClick(self, WidgetItem):
+        self.showStatusMessage('status', 'select: ' + WidgetItem.text().toUtf8().data())
+        print self.stockTable.verticalHeaderItem(WidgetItem.row()).text().toUtf8().data()
+
+    def stockTBItemDoubleClick(self, WidgetItem):
+        print 'itemDoubleClick',WidgetItem.row(), WidgetItem.column(), WidgetItem.text().toUtf8().data()
+
+    def _connectDB(self):
+        stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
+        if not stockData.isConnectSuccess():
+            stockData = None
+        return stockData
+
+    def _disconnectDB(self):
+        self.stockData = None
+
+    def updateStockTableProgress(self):
+        def _loadStockInfoAndUpdateStockTable(self):
+            """
+            Clear stockTable,then request data from db.
+            This is an coroutine function.
+            It would show and update progress progressBar in statusBar.
+            Finally,hide the progressBar
+            """
+            self.stockTable.clearContents()
+            stockInfo_list = self.stockData.getStockInfo_dicORList()
+            rowCount = len(stockInfo_list)
+            self.statusProgressBar.setMaximum(rowCount)
+            self.statusProgressBar.setVisible(True)
+
+            self.stockTable.setRowCount(rowCount)
+            for index, stockInfo in enumerate(stockInfo_list):
+                yield index
+                # self.statusProgressBar.setValue(index)
+                for key, value in stockInfo.iteritems():
+                    columnNum = self.enumStockTableColumn(key)
+                    if columnNum == __enumError__:
+                        if key == 'code':
+                            self.stockTable.setVerticalHeaderItem(index, QtGui.QTableWidgetItem(value))
+                        continue
+
+                    if self.isNumber(value):
+                        widgetItem = QtGui.QTableWidgetItem(repr(value))
+                    else:
+                        widgetItem = QtGui.QTableWidgetItem(value)
+                    widgetItem.setTextAlignment(QtCore.Qt.AlignCenter)
+                    self.stockTable.setItem(index, columnNum, widgetItem)
+            self.statusProgressBar.setVisible(False)
+            self.showStatusMessage('status', self.stockData.curExchangeName + " data load completed")
+
+        loader = _loadStockInfoAndUpdateStockTable(self)
+        for index in loader:
+            self.statusProgressBar.setValue(index)
 
     def hoveredEvent(self, ationx):
         if ationx == self.menuConnectAction:
@@ -236,6 +356,10 @@ class Ui_MainWindow(object):
         if ationx == self.menuDisconnectAction:
             print 'hoveredEvent', ationx
 
+    def closeEvent(self, event):
+        print 'window close'
+        self.stockData = None
+
     def setup(self):
         """
     application set up, ex.: DB ip
@@ -243,15 +367,15 @@ class Ui_MainWindow(object):
         pass
 
     def exit(self):
-        print 'exit'
-        self.stockData = None
+        print 'quit exit'
         self.window.emit(QtCore.SIGNAL('exit()'))
 
     def test(self):
         print 'test'
-        # stock_cursor = self.stockData.getStockInfo_dicORList()
-        # for stock in stock_cursor:
-        #     print stock
+
+        # t = threading.Thread(target=self.loadStockInfoAndUpdateStockTable)
+        # t.daemon = False
+        # t.start()
 
         # import httplib2
         # import socks
@@ -260,11 +384,23 @@ class Ui_MainWindow(object):
         # print r
         # print c
 
-
+    def isNumber(self, str):
+        """
+        str.isDigit() ：float will be deemed to be str.
+        :param str: any str
+        :return: true when the content of str is a number
+        """
+        try:
+            str + 1
+        except TypeError:
+            return False
+        else:
+            return True
 
 
 if __name__ == '__main__':
     import sys
+
     app = QtGui.QApplication(sys.argv)
     Form = QtGui.QMainWindow()
     window = Ui_MainWindow()
