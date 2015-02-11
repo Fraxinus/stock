@@ -12,6 +12,8 @@ import StockData
 import threading
 import functools
 
+import time
+
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
@@ -296,11 +298,14 @@ class Ui_MainWindow(object):
             return
 
     def stockTBItemClick(self, WidgetItem):
-        self.showStatusMessage('status', 'select: ' + WidgetItem.text().toUtf8().data())
-        print self.stockTable.verticalHeaderItem(WidgetItem.row()).text().toUtf8().data()
+        code = self.stockTable.verticalHeaderItem(WidgetItem.row()).text().toUtf8().data()
+        key = self.stockTable.horizontalHeaderItem(WidgetItem.column()).text().toUtf8().data()
+        value = WidgetItem.text().toUtf8().data()
+        self.showStatusMessage('status', 'selected: ' + 'code: ' + code + '  ' + key + ': ' + value)
 
     def stockTBItemDoubleClick(self, WidgetItem):
-        print 'itemDoubleClick',WidgetItem.row(), WidgetItem.column(), WidgetItem.text().toUtf8().data()
+        code = self.stockTable.verticalHeaderItem(WidgetItem.row()).text().toUtf8().data()
+        print code
 
     def _connectDB(self):
         stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
@@ -318,6 +323,7 @@ class Ui_MainWindow(object):
             This is an coroutine function.
             It would show and update progress progressBar in statusBar.
             Finally,hide the progressBar
+            yield in mac don`t work like in windows
             """
             self.stockTable.clearContents()
             stockInfo_list = self.stockData.getStockInfo_dicORList()
@@ -327,8 +333,7 @@ class Ui_MainWindow(object):
 
             self.stockTable.setRowCount(rowCount)
             for index, stockInfo in enumerate(stockInfo_list):
-                yield index
-                # self.statusProgressBar.setValue(index)
+                yield index  # self.statusProgressBar.setValue(index)
                 for key, value in stockInfo.iteritems():
                     columnNum = self.enumStockTableColumn(key)
                     if columnNum == __enumError__:
@@ -372,6 +377,12 @@ class Ui_MainWindow(object):
 
     def test(self):
         print 'test'
+        # when the window style is StayOnTop, cancel that flag
+        if int(self.window.windowFlags()) == 134541313:
+            self.window.setWindowFlags(QtCore.Qt.WindowFlags(134279169))
+            self.window.show()
+
+
 
         # t = threading.Thread(target=self.loadStockInfoAndUpdateStockTable)
         # t.daemon = False
@@ -403,7 +414,11 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     Form = QtGui.QMainWindow()
+    # in mac, cant get on top auto when app start,
+    # add StaysOnTop to solve that
+    Form.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
     window = Ui_MainWindow()
     window.setupUi(Form)
     Form.show()
+    window.menuConnectActionPress()
     sys.exit(app.exec_())
