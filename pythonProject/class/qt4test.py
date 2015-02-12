@@ -143,7 +143,41 @@ class Window( QtGui.QWidget ):
 
 # numpy.test(1,1)
 
+
 app = QtGui.QApplication( sys.argv )
 win = Window()
 win.show()
 app.exec_()
+
+
+class stockListModel(QtCore.QAbstractListModel):
+    def __init__(self, datain, parnet=None, *args):
+        """数据：一列表中的每个项目是一个行"""
+        super(stockListModel, self).__init__(parnet, *args)
+        self.listData = datain
+
+    #这2个方法是规定好的
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return len(self.listData)
+
+    def data(self, index, row):#isValid()是否有效的
+        if index.isValid() and row == QtCore.Qt.DisplayRole:#关键数据以文本的形式呈现
+            return QtCore.QVariant(self.listData[index.row()])#QVariant类就像一个最常见的Qt联盟数据类型
+        else:
+            return QtCore.QVariant()
+
+#QStandardItemModel类提供了一个通用的模型来存储自定义数据
+class stockItemModel(QtGui.QStandardItemModel):
+    def __init__(self, datain, parnet=None):
+        super(QtGui.QStandardItemModel, self).__init__(parnet)
+        self.datain = datain
+        for i in self.datain:
+            item = QtGui.QStandardItem(str(i))
+            #ItemIsUserCheckable接受与不接受
+            #ItemIsEnabled用于交互
+            item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+            #Checked检查是否选中
+            #CheckStateRole检查是否选择的状态
+            item.setData(QtCore.QVariant(QtCore.Qt.Checked), QtCore.Qt.CheckStateRole)
+            #附加一行包含项目。 如果有必要,列数增加的大小项目。
+            self.appendRow(item)

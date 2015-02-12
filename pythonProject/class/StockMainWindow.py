@@ -87,20 +87,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setMargin(0)
         self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
         MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 812, 23))
-        self.menubar.setObjectName(_fromUtf8("menubar"))
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtGui.QStatusBar(MainWindow)
-        self.statusbar.setObjectName(_fromUtf8("statusbar"))
-        MainWindow.setStatusBar(self.statusbar)
-        self.statusLabels = dict()
-        self.statusLabels['ip'] = QtGui.QLabel(MainWindow)
-        self.statusLabels['exchange'] = QtGui.QLabel(MainWindow)
-        self.statusLabels['sector'] = QtGui.QLabel(MainWindow)
-        self.statusLabels['status'] = QtGui.QLabel(MainWindow)
-        self.statusProgressBar = QtGui.QProgressBar(MainWindow)
-        self.statusProgressBar.setObjectName(_fromUtf8("statusProgressBar"))
         MainWindow.closeEvent = self.closeEvent
 
 
@@ -139,6 +125,11 @@ class Ui_MainWindow(object):
         self.menubar.setGeometry(QtCore.QRect(0, 0, event.size().width(), 23))
 
     def _initMenuBar(self):
+        self.menubar = QtGui.QMenuBar(self.window)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 812, 23))
+        self.menubar.setObjectName(_fromUtf8("menubar"))
+        self.window.setMenuBar(self.menubar)
+
         startMenu = self.menubar.addMenu(_fromUtf8("开始"))
         # startMenu.hovered.connect(self.hoveredEvent)
         self.menuConnectAction = startMenu.addAction(_fromUtf8("连接数据库"))
@@ -170,7 +161,17 @@ class Ui_MainWindow(object):
         # self.menuExchangeSZAction.triggered.connect(self.connectDB)
 
     def _initStatusBar(self):
-        # self.statusProgressBar.setGeometry(QtCore.QRect(0, 0, 50, 23))
+        self.statusbar = QtGui.QStatusBar(self.window)
+        self.statusbar.setObjectName(_fromUtf8("statusBar"))
+        self.window.setStatusBar(self.statusbar)
+        self.statusLabels = dict()
+        self.statusLabels['ip'] = QtGui.QLabel(self.window)
+        self.statusLabels['exchange'] = QtGui.QLabel(self.window)
+        self.statusLabels['sector'] = QtGui.QLabel(self.window)
+        self.statusLabels['status'] = QtGui.QLabel(self.window)
+        self.statusProgressBar = QtGui.QProgressBar(self.window)
+        self.statusProgressBar.setObjectName(_fromUtf8("statusProgressBar"))
+
         self.statusbar.addPermanentWidget(self.statusProgressBar, stretch=2)
         self.statusProgressBar.setMinimum(0)
         self.statusProgressBar.setVisible(False)
@@ -316,6 +317,9 @@ class Ui_MainWindow(object):
     def _disconnectDB(self):
         self.stockData = None
 
+    def getStockInfos(self):
+        return self.stockData.getStockInfo_dicORList()
+
     def updateStockTableProgress(self):
         def _loadStockInfoAndUpdateStockTable(self):
             """
@@ -326,7 +330,7 @@ class Ui_MainWindow(object):
             yield in mac don`t work like in windows
             """
             self.stockTable.clearContents()
-            stockInfo_list = self.stockData.getStockInfo_dicORList()
+            stockInfo_list = self.getStockInfos()
             rowCount = len(stockInfo_list)
             self.statusProgressBar.setMaximum(rowCount)
             self.statusProgressBar.setVisible(True)
@@ -414,11 +418,13 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     Form = QtGui.QMainWindow()
-    # in mac, cant get on top auto when app start,
-    # add StaysOnTop to solve that
-    Form.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+    #Form.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
     window = Ui_MainWindow()
     window.setupUi(Form)
     Form.show()
+    # in mac, cant get on top auto when app start,
+    # add raise_() to solve that
+    if sys.platform == 'darwin':
+        Form.raise_()
     window.menuConnectActionPress()
     sys.exit(app.exec_())
