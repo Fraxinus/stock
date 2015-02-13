@@ -31,6 +31,9 @@ except AttributeError:
 class Ui_Form(object):
     def setupUi(self, Form):
         self.window = Form
+        self.father = None
+        self.fatherShow = Form.show
+        Form.show = self.show
         Form.setObjectName(_fromUtf8("Form"))
         Form.resize(923, 480)
         self.verticalLayoutWidget = QtGui.QWidget(Form)
@@ -88,8 +91,10 @@ class Ui_Form(object):
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
+        Form.closeEvent = self.closeEvent
 
         self._initStockListView()
+        return self
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(_translate("Form", "Form", None))
@@ -104,11 +109,24 @@ class Ui_Form(object):
         self.refreshDateButton.setText(_translate("Form", "refresh", None))
         self.testButton.setText(_translate("Form", "test", None))
 
+    def setDelegate(self, father):
+        print 'analysisWindow set delegate' + str(type(father))
+        if 'StockMainWindow' in str(type(father)):
+            self.father = father
+        else:
+            raise 'analysisWindow init error,the second param must be StocksDetailWindow'
+
+    def show(self):
+        print 'analysisWindow show'
+        if not self.father:
+            raise 'analysisWindow show error,StocksDetailWindow.setDelegate(StockMainWindow father)must be call before show'
+        self.fatherShow()
+
     def _initStockListView(self):
         self.stockListWidget = QtGui.QListWidget(self.verticalLayoutWidget)
         self.stockListWidget.setObjectName(_fromUtf8("stockListView"))
         self.leftVerticalLayout.addWidget(self.stockListWidget)
-        self.stockListWidget.clicked.connect(self.indexMove)
+        self.stockListWidget.clicked.connect(self.stockListClick)
         self.stockListWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.stockListWidget.connect(self.stockListWidget, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.listItemRightClicked)
 
@@ -119,9 +137,20 @@ class Ui_Form(object):
         self.stockListWidget.addItem(listItem)
         self.stockListWidget.addItem(listItem2)
 
-    def indexMove(self, modelIndex):
+    def stockListClick(self, modelIndex):
         print u'你选择的是{0}'.format(modelIndex.row())
         print dir(modelIndex)
+
+    def insertStock(self, code, name):
+        print 'insertStock',code,name
+        listItem = QtGui.QListWidgetItem(" ", self.stockListWidget)
+        listItem.setSizeHint(__cellSize__)
+
+        form = QtGui.QWidget()
+        cell = StockListCell.Ui_Form()
+        cell.setupUi(form, code, name)
+        cell.form.resize(__cellSize__)
+        self.stockListWidget.setItemWidget(listItem, cell.form)
 
 
     def listItemRightClicked(self):
@@ -139,6 +168,7 @@ class Ui_Form(object):
     def test(self):
         print 'test'
         print self.stockListWidget.item(0).text().toUtf8().data()
+        print self.father.code
         listItem = QtGui.QListWidgetItem("ttt\r\n\r\n100", self.stockListWidget)
         listItem.setText(" ")
         listItem.setSizeHint(__cellSize__)
@@ -151,6 +181,19 @@ class Ui_Form(object):
         btn = QtGui.QPushButton('btn')
         # cell.setGeometry(QtCore.QRect(10, 76, 10, 10))
         self.stockListWidget.setItemWidget(listItem, cell)
+
+    def closeEvent(self, event):
+        print 'analysisWindow close'
+        self.father.closeAnalysisWindow()
+
+    def close(self):
+        self.window.close()
+
+    def raise_(self):
+        """
+        bing window to top
+        """
+        self.window.raise_()
 
 
 if __name__ == '__main__':

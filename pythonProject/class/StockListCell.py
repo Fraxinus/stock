@@ -28,9 +28,12 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 class Ui_Form(object):
-    def setupUi(self, Form):
+    def setupUi(self, Form, code, name):
         Form.setObjectName(_fromUtf8("Form"))
-        Form.resize(__cellSize__)
+        # Form.resize(__cellSize__)
+        self.form = Form
+        self.code = code
+        self.name = name
         self.delButton = QtGui.QPushButton(Form)
         self.delButton.setGeometry(QtCore.QRect(80, 10, 30, 30))
         self.delButton.setObjectName(_fromUtf8("delButton"))
@@ -45,11 +48,10 @@ class Ui_Form(object):
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
-        return Form
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(_translate("Form", "Form", None))
         self.delButton.setText(_translate("Form", "x", None))
-        self.codeLabel.setText(_translate("Form", "600000", None))
-        self.namelabel.setText(_translate("Form", "上海证券", None))
+        self.codeLabel.setText(_translate("Form", self.code, None))
+        self.namelabel.setText(_translate("Form", self.name, None))
 

@@ -11,6 +11,7 @@ from PyQt4 import QtCore, QtGui
 import StockData
 import threading
 import functools
+import StocksAnalysisWindow
 
 import time
 
@@ -44,7 +45,7 @@ def async(wrapped):
 
 
 
-class Ui_MainWindow(object):
+class StockMainWindow(object):
     def setupUi(self, MainWindow):
         self.window = MainWindow
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
@@ -92,6 +93,7 @@ class Ui_MainWindow(object):
 
         # info = "  <font style='color: green;background: white;'>this is a test for change the fg & bg color ,text info</font>"
         # self.statueLabel.setText(info)
+        self.StockAnalysisWindow = None
         self._initMenuBar()
         self._initStatusBar()
         self._initTableView()
@@ -212,6 +214,13 @@ class Ui_MainWindow(object):
         width = self.stockTable.columnWidth(index) - 16
         self.stockTable.setColumnWidth(index, width)
 
+    def _initAnalysisWindow(self, father):
+        Form = QtGui.QWidget()
+        window = StocksAnalysisWindow.Ui_Form()
+        window.setupUi(Form)
+        window.setDelegate(father)
+        return window
+
     def enumStockTableColumn(self, key):
         """
             get the column num by the name of column
@@ -306,7 +315,15 @@ class Ui_MainWindow(object):
 
     def stockTBItemDoubleClick(self, WidgetItem):
         code = self.stockTable.verticalHeaderItem(WidgetItem.row()).text().toUtf8().data()
-        print code
+        name = self.stockTable.item(WidgetItem.row(),
+                                    self.enumStockTableColumn("name")).text().toUtf8().data()
+        if not self.StockAnalysisWindow:
+            self.StockAnalysisWindow = self._initAnalysisWindow(self)
+            self.StockAnalysisWindow.show()
+        else:
+            self.StockAnalysisWindow.raise_()
+
+        self.StockAnalysisWindow.insertStock(code, name)
 
     def _connectDB(self):
         stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
@@ -366,8 +383,15 @@ class Ui_MainWindow(object):
             print 'hoveredEvent', ationx
 
     def closeEvent(self, event):
-        print 'window close'
+        print 'main window close'
         self.stockData = None
+        if self.StockAnalysisWindow:
+            self.closeAnalysisWindow()
+
+    def closeAnalysisWindow(self):
+        if self.StockAnalysisWindow:
+            self.StockAnalysisWindow.close()
+        self.StockAnalysisWindow = None
 
     def setup(self):
         """
@@ -376,7 +400,7 @@ class Ui_MainWindow(object):
         pass
 
     def exit(self):
-        print 'quit exit'
+        print 'main quit exit'
         self.window.emit(QtCore.SIGNAL('exit()'))
 
     def test(self):
@@ -419,7 +443,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     Form = QtGui.QMainWindow()
     #Form.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-    window = Ui_MainWindow()
+    window = StockMainWindow()
     window.setupUi(Form)
     Form.show()
     # in mac, cant get on top auto when app start,
