@@ -383,13 +383,16 @@ class StockMainWindow(object):
             print 'hoveredEvent', ationx
 
     def closeEvent(self, event):
+        """
+        Rewrite the widget.closeEvent
+        """
         print 'main window close'
+        if self.StockAnalysisWindow:
+            self.closeAnalysisWindow(isOnlyNotification=False)
         self.stockData = None
-        if self.StockAnalysisWindow:
-            self.closeAnalysisWindow()
 
-    def closeAnalysisWindow(self):
-        if self.StockAnalysisWindow:
+    def closeAnalysisWindow(self, isOnlyNotification=False):
+        if self.StockAnalysisWindow and (not isOnlyNotification):
             self.StockAnalysisWindow.close()
         self.StockAnalysisWindow = None
 

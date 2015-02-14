@@ -8,7 +8,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
-import StockListCell
+from StockListCell import StockListCell
 
 __cellSize__ = QtCore.QSize(115, 50)
 QtCore.QTextCodec.setCodecForTr(QtCore.QTextCodec.codecForName("utf8"))
@@ -32,8 +32,6 @@ class Ui_Form(object):
     def setupUi(self, Form):
         self.window = Form
         self.father = None
-        self.fatherShow = Form.show
-        Form.show = self.show
         Form.setObjectName(_fromUtf8("Form"))
         Form.resize(923, 480)
         self.verticalLayoutWidget = QtGui.QWidget(Form)
@@ -92,7 +90,9 @@ class Ui_Form(object):
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
         Form.closeEvent = self.closeEvent
+        Form.keyPressEvent = self.keyPressEvent
 
+        self.cells = {}
         self._initStockListView()
         return self
 
@@ -116,12 +116,6 @@ class Ui_Form(object):
         else:
             raise 'analysisWindow init error,the second param must be StocksDetailWindow'
 
-    def show(self):
-        print 'analysisWindow show'
-        if not self.father:
-            raise 'analysisWindow show error,StocksDetailWindow.setDelegate(StockMainWindow father)must be call before show'
-        self.fatherShow()
-
     def _initStockListView(self):
         self.stockListWidget = QtGui.QListWidget(self.verticalLayoutWidget)
         self.stockListWidget.setObjectName(_fromUtf8("stockListView"))
@@ -130,63 +124,88 @@ class Ui_Form(object):
         self.stockListWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.stockListWidget.connect(self.stockListWidget, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.listItemRightClicked)
 
-        list_data = [1, 2, 3, 4]
-        listItem = QtGui.QListWidgetItem("123\r\n\r\n100", self.stockListWidget)
-        listItem.setSizeHint(__cellSize__)
-        listItem2 = QtGui.QListWidgetItem("222", self.stockListWidget)
-        self.stockListWidget.addItem(listItem)
-        self.stockListWidget.addItem(listItem2)
+    def _initPos(self):
+        self.window.move(self.father.window.pos().x() + 120,
+                         self.father.window.pos().y() + 50)
 
-    def stockListClick(self, modelIndex):
-        print u'你选择的是{0}'.format(modelIndex.row())
-        print dir(modelIndex)
+    def stockListClick(self, cellIndex):
+        print u'你选择的是{0}'.format(cellIndex.row())
+        print dir(cellIndex)
+        curListWidgetItem = self.stockListWidget.item(cellIndex.row())
+        for code, cell in self.cells.iteritems():
+            if cell.listWidgetItem == curListWidgetItem:
+                print cell.code()
+                return
 
     def insertStock(self, code, name):
-        print 'insertStock',code,name
-        listItem = QtGui.QListWidgetItem(" ", self.stockListWidget)
-        listItem.setSizeHint(__cellSize__)
+        """
+        If the stock is in list,set focus,
+        else create widgetItem,and save in (dic)self.cells
+        """
+        print 'insertStock', code, name
+        if code in self.cells:
+            print 'exist'
+            self.stockListWidget.setCurrentItem(self.cells[code].listWidgetItem)
+            return
+        cell = StockListCell()
+        cell.setupUi(code, name, itemWidget=self.stockListWidget)
+        cell.resize_(__cellSize__)
+        cell.delBtnCallBack = self.removeStockByCellDelBtn
+        self.stockListWidget.setItemWidget(cell.listWidgetItem, cell)
+        self.stockListWidget.setCurrentItem(cell.listWidgetItem)
+        self.cells[code] = cell
 
-        form = QtGui.QWidget()
-        cell = StockListCell.Ui_Form()
-        cell.setupUi(form, code, name)
-        cell.form.resize(__cellSize__)
-        self.stockListWidget.setItemWidget(listItem, cell.form)
-
+    def removeStockByCellDelBtn(self, code, name):
+        """
+        Rewrite the StockListCell.delBtnCallBack.
+        When click the X button,remove the item.
+        If the last stock is removed,close this window.
+        :param code:The cell pass the code witch the X button you click.
+        :param name:The same to code.
+        """
+        print 'removeStockByCellDelBtn',code,name
+        cell = self.cells[code]
+        row = self.stockListWidget.row(cell.listWidgetItem)
+        item_deleted = self.stockListWidget.takeItem(row)
+        del item_deleted
+        del self.cells[code]
+        print self.cells
+        if len(self.cells) == 0:
+            self.father.closeAnalysisWindow(isOnlyNotification=False)
 
     def listItemRightClicked(self):
         print 'right click'
 
-    def rebuildListWidget(self):
-        self.stockListWidget.clear()
-        items=self.listItems.keys()
-        if len(items)>1: items.sort()
-        for listItemName in items:
-            listItem = QtGui.QListWidgetItem(listItemName, self.stockListWidget)
-            self.listItems[listItemName]=listItem
-
-
     def test(self):
         print 'test'
-        print self.stockListWidget.item(0).text().toUtf8().data()
-        print self.father.code
-        listItem = QtGui.QListWidgetItem("ttt\r\n\r\n100", self.stockListWidget)
-        listItem.setText(" ")
-        listItem.setSizeHint(__cellSize__)
-        # self.stockListWidget.addItem(listItem)
 
-        form = QtGui.QWidget()
-        cell = StockListCell.Ui_Form().setupUi(form)
-        # cell.setupUi(form)
-        # form.show()
-        btn = QtGui.QPushButton('btn')
-        # cell.setGeometry(QtCore.QRect(10, 76, 10, 10))
-        self.stockListWidget.setItemWidget(listItem, cell)
+    def keyPressEvent(self, QKeyEvent):
+        """
+        Rewrite self.window.keyPressEvent
+        """
+        if QKeyEvent.key() == QtCore.Qt.Key_Escape:
+            self.father.closeAnalysisWindow(isOnlyNotification=False)
+
+
+    def show(self):
+        print 'analysisWindow show'
+        if not self.father:
+            raise 'analysisWindow show error,StocksDetailWindow.setDelegate(StockMainWindow father)must be call before show'
+        self._initPos()
+        self.window.show()
 
     def closeEvent(self, event):
-        print 'analysisWindow close'
-        self.father.closeAnalysisWindow()
+        """
+        Use to rewrite the window.closeEvent.
+        Call father's function to close this class.
+        """
+        print 'analysisWindow closeEvent'
+        self.father.closeAnalysisWindow(isOnlyNotification=True)
 
     def close(self):
+        print 'analysisWindow close'
+        self.stockListWidget.clear()
+        self.cells = None
         self.window.close()
 
     def raise_(self):
