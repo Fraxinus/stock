@@ -32,12 +32,12 @@ class DrawWidget(QtGui.QWidget):
         self.xxax = figure.gca()
          # fig, ax = plt.subplots(1)
         # np.random.seed(14)
-        ppl.plot(figure.gca(), t, t, 'g--', label=str('t, t'), pickradius=28.0)
+        x = ppl.plot(figure.gca(), t, t, '--', color=(255/255.,150/255.,250/255.), label=str('t, t'), pickradius=28.0)
         ppl.plot(figure.gca(),  t, t*2, label=str(' t, t*2'), pickradius=8.0)
         ppl.plot(figure.gca(), t, t**2, label=str('t, t**2'), pickradius=8.0)
         ppl.legend(figure.gca(), loc='upper left', ncol=3)
 
-
+        # figure.gca().lines.remove(x[0])
 
         # ax = plt.gca()#移动坐标轴
         # ax.spines['right'].set_color('none')#去除右边的轴
@@ -87,6 +87,8 @@ class DrawWidget(QtGui.QWidget):
         figure.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
         self.canvas.draw()
 
+
+
         figure2 = plt.figure(2, figsize=(8, 4), facecolor='green', edgecolor='red')
         #figsize = (8,4)表示figure的大小，屏幕显示 640 * 320 ， 输出显示 800*400，这个要注意。
         #显示色和外框线条颜色设置。
@@ -134,11 +136,13 @@ class DrawWidget(QtGui.QWidget):
         # n = 10
         # ppl.bar(plt.gca(), np.arange(n), np.abs(np.random.randn(n)), annotate=True, grid='y')
 
-        self.canvas2.draw()
+
 
         layout = QtGui.QHBoxLayout(self)
         layout.addWidget(self.canvas)
         layout.addWidget(self.canvas2)
+
+        self.canvas2.draw()
 
     def on_mouse_move(self, event):
         print event.name, ',', event.x, ',', event.y, ',', event.xdata, ',', event.ydata
@@ -193,4 +197,5 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     ui = DrawWidget()
     ui.show()
+    ui.raise_()
     sys.exit(app.exec_())

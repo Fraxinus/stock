@@ -404,17 +404,17 @@ print 'sdsds'.translate(transTabel, 'd')
 phoneBook = {'abc': '123', 'vvv': '224'}
 print "abc no tel wa: %(abc)s" % phoneBook  # 非常有用，特别是在输入类似xml和html的时候配合字符串模版使用
 
-from Tkinter import *
-def helllllo():
-    print "hello world"
-
-win = Tk()
-win.title('hello world')
-win.geometry('200x300+500+200')
-btn = Button(win, text='hello', command=helllllo)
-btn.pack(expand=YES, fill=BOTH)
-
-mainloop()
+# from Tkinter import *
+# def helllllo():
+#     print "hello world"
+#
+# win = Tk()
+# win.title('hello world')
+# win.geometry('200x300+500+200')
+# btn = Button(win, text='hello', command=helllllo)
+# btn.pack(expand=YES, fill=BOTH)
+#
+# mainloop()
 
 # jobs = set()
 # jobs.add('%s:%s' % (a,b))
@@ -450,8 +450,8 @@ print x
 print time.strftime('%Y-%m-%d', x)
 
 import datetime
-print datetime.datetime.strptime(a, '%Y-%m-%d')
-
+dt = datetime.datetime.strptime(a, '%Y-%m-%d')
+print dt.strftime('%Y-%m-%d')
 a ="12.5"
 b="12.52"
 
@@ -462,7 +462,21 @@ print a
 # detect_dict = chardet.detect('sdsdsdsdsdsd')
 # confidence, encoding = detect_dict['confidence'], detect_dict['encoding']
 # print detect_dict
-B = {"name": "C#从入门到精通", "price": "23,7", "store": "卓越"}
-print B['price']
-c = B['price']
-print int((B['price'] or "0").replace(',', ""))
+
+# B = {"name": "C#从入门到精通", "price": "23,7", "store": "卓越"}
+# print B['price']
+# c = B['price']
+# print int((B['price'] or "0").replace(',', ""))
+
+# import random
+# from PyQt4 import QtGui
+# def aaa():
+#     QColor_list = QtGui.QColor.colorNames()
+#     count = len(QColor_list)
+#     randomIndex = random.randint(0, count)
+#     colorName = QColor_list[randomIndex]
+#     del QColor_list[randomIndex]
+#     qColor = QtGui.QColor(colorName)
+#     return qColor.red(),qColor.green(),qColor.blue()
+#
+# print aaa()

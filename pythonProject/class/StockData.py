@@ -8,6 +8,8 @@ __cappedSize__ = 1572864  # 1.5Mb
 ShangHaiStockDB = 'SH'
 ShenZhenStockDB = 'SZ'
 import database_m
+import time
+import datetime
 
 __isTest__ = True  # #--正式环境时更改此变量为False
 import pprint
@@ -415,8 +417,55 @@ class StockDataClass:
             insertNewDateList.append("not all success, process break out")
         return insertNewDateList
 
+    def loadStockDayDataByDate(self, code, startDate=None, endDate=None):
+        """
+        :return:A list,stock day data between the startDate and endDate
+        :param code:Stock'code
+        :param startDate: if None, load from the origin
+        :param endDate:if None, load to the last
+        :raise: date string format error or endDate larger then startDate
+        """
+        if (not startDate) and (not endDate):
+            stock_cursor = self.db[code].find({}, {"_id": 0})\
+                .sort("date", database_m.ASCENDING)
+        elif startDate and endDate:
+            try:
+                t = time.strptime(startDate, "%Y-%m-%d")
+                originDateTime = datetime.date(t.tm_year, t.tm_mon, t.tm_mday)
+                t2 = time.strptime(endDate, "%Y-%m-%d")
+                endDateTime = datetime.date(t2.tm_year, t2.tm_mon, t2.tm_mday)
+            except Exception, e:
+                print 'StockData: the string of date is format error'
+                raise e
+            finally:
+                if originDateTime >= endDateTime:
+                    raise 'StockData: originDate >=endDate'
+            stock_cursor = self.db[code].find({"date": {"$gte": startDate, "$lte": endDate}},
+                                              {"_id": 0})\
+                .sort("date", database_m.ASCENDING)
+        elif startDate:
+            try:
+                t = time.strptime(startDate, "%Y-%m-%d")
+            except Exception, e:
+                print 'StockData: the string of date is format error'
+                raise e
+            stock_cursor = self.db[code].find({"date": {"$gte": startDate}}, {"_id": 0})\
+                .sort("date", database_m.ASCENDING)
+        elif endDate:
+            try:
+                t = time.strptime(endDate, "%Y-%m-%d")
+            except Exception, e:
+                print 'StockData: the string of date is format error'
+                raise e
+            stock_cursor = self.db[code].find({"date": {"$lte": endDate}}, {"_id": 0})\
+                .sort("date", database_m.ASCENDING)
+
+        stock_list = []
+        for stock in stock_cursor:
+            stock_list.append(stock)
+        return stock_list
+
     def stock_test(self):
-        # self.db["600000"].insert({"date":"2013-10-05"})
         # StopIteration
         # print self.db["600001"].find({},{"date":1,"_id":0}).sort("date", database_m.ASCENDING).limit(1).next()["date"]
         # print self.db["600000"].find({},{"date":1,"_id":0}).sort("date", database_m.DESCENDING).limit(1).next()["date"]

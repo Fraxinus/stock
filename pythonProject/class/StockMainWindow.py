@@ -50,6 +50,7 @@ class StockMainWindow(object):
         self.window = MainWindow
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(812, 600)
+        MainWindow.move(30, 60)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.verticalLayoutWidget = QtGui.QWidget(self.centralwidget)
@@ -320,10 +321,15 @@ class StockMainWindow(object):
         if not self.StockAnalysisWindow:
             self.StockAnalysisWindow = self._initAnalysisWindow(self)
             self.StockAnalysisWindow.show()
-        else:
+            self.StockAnalysisWindow.insertStock(code, name)
             self.StockAnalysisWindow.raise_()
+        else:
+            if self.StockAnalysisWindow.insertStock(code, name):
+                self.StockAnalysisWindow.raise_()
+            else:
+                print '弹出警告筐'
 
-        self.StockAnalysisWindow.insertStock(code, name)
+
 
     def _connectDB(self):
         stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
@@ -336,6 +342,9 @@ class StockMainWindow(object):
 
     def getStockInfos(self):
         return self.stockData.getStockInfo_dicORList()
+
+    def getStockDayData(self, code, start=None, end=None):
+        return self.stockData.loadStockDayDataByDate(code, start, end)
 
     def updateStockTableProgress(self):
         def _loadStockInfoAndUpdateStockTable(self):
@@ -388,13 +397,15 @@ class StockMainWindow(object):
         """
         print 'main window close'
         if self.StockAnalysisWindow:
-            self.closeAnalysisWindow(isOnlyNotification=False)
+            self.StockAnalysisWindow.close()
+            self.StockAnalysisWindow = None
         self.stockData = None
 
-    def closeAnalysisWindow(self, isOnlyNotification=False):
-        if self.StockAnalysisWindow and (not isOnlyNotification):
-            self.StockAnalysisWindow.close()
+    def closeAnalysisWindowNotify(self):
+        print 'closeAnalysisWindow notify'
+        self.window.raise_()
         self.StockAnalysisWindow = None
+
 
     def setup(self):
         """
@@ -408,11 +419,9 @@ class StockMainWindow(object):
 
     def test(self):
         print 'test'
-        # when the window style is StayOnTop, cancel that flag
-        if int(self.window.windowFlags()) == 134541313:
-            self.window.setWindowFlags(QtCore.Qt.WindowFlags(134279169))
-            self.window.show()
-
+        self.lastDay = QtCore.QDateTime.fromString('1900-01-01', 'yyyy-MM-dd')
+        print self.lastDay
+        print self.lastDay.toString('yyyy-MM-dd')
 
 
         # t = threading.Thread(target=self.loadStockInfoAndUpdateStockTable)

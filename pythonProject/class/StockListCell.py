@@ -11,6 +11,8 @@ from PyQt4 import QtCore, QtGui
 
 
 __cellSize__ = QtCore.QSize(115, 50)
+__styleFormat__ = 'border:0px groove gray;border-radius:15px;' \
+                  'padding:1px 2px;background-color:rgb(%d,%d,%d);'
 QtCore.QTextCodec.setCodecForTr(QtCore.QTextCodec.codecForName("utf8"))
 
 try:
@@ -42,22 +44,24 @@ class StockListCell(QtGui.QWidget):
         self.delButton.clicked.connect(self.delBtnPress)
         self.codeLabel = QtGui.QLabel(self)
         self.codeLabel.setAlignment(QtCore.Qt.AlignCenter)
-        self.codeLabel.setGeometry(QtCore.QRect(10, 5, 55, 21))
+        self.codeLabel.setGeometry(QtCore.QRect(15, 5, 55, 21))
         self.codeLabel.setObjectName(_fromUtf8("codeLabel"))
-        self.namelabel = QtGui.QLabel(self)
-        self.namelabel.setAlignment(QtCore.Qt.AlignCenter)
-        self.namelabel.setGeometry(QtCore.QRect(10, 4+21, 55, 21))
-        self.namelabel.setObjectName(_fromUtf8("namelabel"))
+        self.nameLabel = QtGui.QLabel(self)
+        self.nameLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.nameLabel.setGeometry(QtCore.QRect(15, 4 + 21, 55, 21))
+        self.nameLabel.setObjectName(_fromUtf8("nameLabel"))
         self.listWidgetItem = QtGui.QListWidgetItem(" ", itemWidget)
+        self.listWidgetItem.setBackgroundColor(QtGui.QColor('lightgrey'))
+        self.hintColor = None
 
         self.retranslateUi(self)
         QtCore.QMetaObject.connectSlotsByName(self)
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(_translate("Form", "Form", None))
-        self.delButton.setText(_translate("Form", "x", None))
+        self.delButton.setText(_translate("Form", "X", None))
         self.codeLabel.setText(_translate("Form", self._code, None))
-        self.namelabel.setText(_translate("Form", self._name, None))
+        self.nameLabel.setText(_translate("Form", self._name, None))
 
     def resize_(self, QSize):
         self.resize(QSize)
@@ -74,3 +78,15 @@ class StockListCell(QtGui.QWidget):
 
     def delBtnPress(self):
         self.delBtnCallBack(self.code(), self.name())
+
+    def setHintColor(self, r, g, b):
+        self.hintColor = QtGui.QColor(r, g, b)
+        palette = self.delButton.palette()
+        palette.setColor(QtGui.QPalette.ButtonText, QtGui.QColor('black'))
+        self.delButton.setPalette(palette)
+        style = __styleFormat__ % (r, g, b)
+        self.delButton.setStyleSheet(style)
+        palette = self.nameLabel.palette()
+        palette.setColor(QtGui.QPalette.Text, self.hintColor)
+        self.nameLabel.setPalette(palette)
+        self.codeLabel.setPalette(palette)
