@@ -169,6 +169,34 @@ class StockDataClass:
         print len(insert_success_List)
         return insert_success_List
 
+    def stockIndexInsertOne(self, code, name,
+                            shortName='', fullName='', engName='',
+                            regAddr='', ACode='', AName='',
+                            AOrgDate='', AStockCount=0,
+                            ACirculate=0, BCode='', BName='',
+                            BOrgDate='', BStockCount=0, BCirculate=0,
+                            area='', province='', city='',
+                            businessClassify='', HP=''):
+
+        if self.curExchangeName == ShangHaiStockDB:
+            isExist = self.db[__stockIndexCollection__].find({"code": code}).count()
+        else:
+            isExist = self.db[__stockIndexCollection__].find({"code": name}).count()
+
+        if isExist:
+            return 0
+
+        self.db_factory.insertDoc = insertStockIndex
+        ret = self.db_factory.insertDoc(self.db, code, name, shortName,
+                                        fullName, engName, regAddr,
+                                        ACode, AName, AOrgDate, AStockCount, ACirculate,
+                                        BCode, BName, BOrgDate, BStockCount, BCirculate,
+                                        area, province, city, businessClassify, HP)
+
+        self.db_factory.insertDoc = self.db_factory.resetRewrite
+
+        return ret
+
     def getAllStockCollectionsName_list(self):
         """
         取得所有股票文件的集合名

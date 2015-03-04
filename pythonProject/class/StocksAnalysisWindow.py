@@ -342,9 +342,29 @@ class Ui_Form(object):
 
     def _startDateChangedEvent(self, QDate):
         print 'start', QDate
+        print 'ed1', self.lastDay
+        if QDate >= self.lastDay.date():
+            r = QtGui.QMessageBox.warning(self.window, "warning", "startDate larger than end date",
+                                          QtGui.QMessageBox.Yes)
+            if r == QtGui.QMessageBox.Yes:
+                # QT bug,setDate()would call many times,
+                # and MessageBox would be show many times
+                QtGui.QDateEdit.blockSignals(self.dateEndEdit, True)
+                self.dateStartEdit.setDate(self.earlistDay.date())
+                QtGui.QDateEdit.blockSignals(self.dateEndEdit, False)
 
     def _endDateChangedEvent(self, QDate):
         print "end", QDate
+        print "st2", self.earlistDay
+        if QDate <= self.earlistDay.date():
+            r = QtGui.QMessageBox.warning(self.window, "warning", "endDate earlier than start date",
+                                          QtGui.QMessageBox.Yes)
+            if r == QtGui.QMessageBox.Yes:
+                # QT bug,setDate()would call many times,
+                # and MessageBox would be show many times
+                QtGui.QDateEdit.blockSignals(self.dateEndEdit, True)
+                self.dateEndEdit.setDate(self.lastDay.date())
+                QtGui.QDateEdit.blockSignals(self.dateEndEdit, False)
 
     def _refreshLockChangeEvent(self, stat):
         if stat == QtCore.Qt.Checked:
