@@ -37,11 +37,13 @@ class StocksGraphView(object):
         self.ax.fmt_date = matplotlib.dates.DateFormatter('%Y-%m-%d')
         self.strpdate2num = matplotlib.dates.strpdate2num('%Y-%m-%d')
 
-        plt.subplots_adjust(left=.03, bottom=.0, right=.98, top=.97,
+        plt.subplots_adjust(left=.04, bottom=.0, right=.98, top=.97,
                       wspace=.0, hspace=.0)
         plt.minorticks_on()
 
         self.ax.grid()
+
+        self.ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%y\n-\n%m\n-\n%d'))
 
 
     def setFocus(self, focus):
@@ -107,11 +109,17 @@ class StocksGraphView(object):
         self._lines[code], = lines
 
         if needRedrawXLabel:
-            self.ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%y\n-\n%m\n-\n%d'))
             locs = self.ax.xaxis.get_ticklocs()
             range = locs[len(locs) - 1] - locs[0]
-            self.ax.xaxis.set_major_locator(
-                matplotlib.ticker.MultipleLocator(range / 20))
+            if 100 <= range < 1000:
+                self.ax.xaxis.set_major_locator(
+                    matplotlib.ticker.MultipleLocator(range / 10))
+            if 1000 <= range < 8000:
+                self.ax.xaxis.set_major_locator(
+                    matplotlib.ticker.MultipleLocator(range / 20))
+            if range >= 8000:
+                self.ax.xaxis.set_major_locator(
+                    matplotlib.ticker.MultipleLocator(range / 30))
             self.figure.autofmt_xdate()
             for label in self.ax.xaxis.get_ticklabels():
                 label.set_ha('center')

@@ -35,14 +35,13 @@ __enumError__ = -1
 
 
 def async(wrapped):
-        def wrapper(*args, **kwargs):
-            t = threading.Thread(target=wrapped, args=args, kwargs=kwargs)
-            t.daemon = True
-            t.start()
+    def wrapper(*args, **kwargs):
+        t = threading.Thread(target=wrapped, args=args, kwargs=kwargs)
+        t.daemon = True
+        t.start()
 
-        functools.update_wrapper(wrapper, wrapped)
-        return wrapper
-
+    functools.update_wrapper(wrapper, wrapped)
+    return wrapper
 
 
 class StockMainWindow(object):
@@ -75,6 +74,7 @@ class StockMainWindow(object):
         self.horizontalLayout.addWidget(self.searchEdit)
         self.searchSubmitBtn = QtGui.QPushButton(self.horizontalLayoutWidget)
         self.searchSubmitBtn.setObjectName(_fromUtf8("searchSubmitBtn"))
+        self.searchSubmitBtn.clicked.connect(self.search)
         self.horizontalLayout.addWidget(self.searchSubmitBtn)
         self.testBtn = QtGui.QPushButton(self.horizontalLayoutWidget)
         self.testBtn.setObjectName(_fromUtf8("testBtn"))
@@ -197,7 +197,8 @@ class StockMainWindow(object):
         self.stockTable.setRowCount(100)
         self.stockTable.setHorizontalHeaderLabels(['name', 'price_last', 'price_highest', 'date_origin', 'date_last',
                                                    'businessClassify', 'count', 'ACirculate', 'AStockCount',
-                                                   'companyShortName', 'companyFullName', 'area', 'province', 'city', 'HP',
+                                                   'companyShortName', 'companyFullName', 'area', 'province', 'city',
+                                                   'HP',
                                                    'regAddr', 'engName'])
         index = self.enumStockTableColumn('name')
         width = self.stockTable.columnWidth(index) - 20
@@ -330,7 +331,6 @@ class StockMainWindow(object):
                 print '弹出警告筐'
 
 
-
     def _connectDB(self):
         stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
         if not stockData.isConnectSuccess():
@@ -340,13 +340,20 @@ class StockMainWindow(object):
     def _disconnectDB(self):
         self.stockData = None
 
-    def getStockInfos(self):
-        return self.stockData.getStockInfo_dicORList()
+    def getStockInfos(self, code=None, name=None):
+        list = self.stockData.getStockInfo_dicORList(code, name)
+        if not code and not name:
+            #if no param,
+            # the result exclude the stock which count of data less than 5.
+            return [i for i in list if i['count'] >= 5]
+        else:
+            #by search, show all result
+            return list
 
     def getStockDayData(self, code, start=None, end=None):
         return self.stockData.loadStockDayDataByDate(code, start, end)
 
-    def updateStockTableProgress(self):
+    def updateStockTableProgress(self, code=None, name=None):
         def _loadStockInfoAndUpdateStockTable(self):
             """
             Clear stockTable,then request data from db.
@@ -356,7 +363,7 @@ class StockMainWindow(object):
             yield in mac don`t work like in windows
             """
             self.stockTable.clearContents()
-            stockInfo_list = self.getStockInfos()
+            stockInfo_list = self.getStockInfos(code, name)
             rowCount = len(stockInfo_list)
             self.statusProgressBar.setMaximum(rowCount)
             self.statusProgressBar.setVisible(True)
@@ -372,8 +379,10 @@ class StockMainWindow(object):
                         continue
 
                     if self.isNumber(value):
+                        # without repr(),number can`t show
                         widgetItem = QtGui.QTableWidgetItem(repr(value))
                     else:
+                        # with repr(),unicode world would garbled
                         widgetItem = QtGui.QTableWidgetItem(value)
                     widgetItem.setTextAlignment(QtCore.Qt.AlignCenter)
                     self.stockTable.setItem(index, columnNum, widgetItem)
@@ -406,7 +415,6 @@ class StockMainWindow(object):
         self.window.raise_()
         self.StockAnalysisWindow = None
 
-
     def setup(self):
         """
     application set up, ex.: DB ip
@@ -423,7 +431,6 @@ class StockMainWindow(object):
         print self.lastDay
         print self.lastDay.toString('yyyy-MM-dd')
 
-
         # t = threading.Thread(target=self.loadStockInfoAndUpdateStockTable)
         # t.daemon = False
         # t.start()
@@ -435,9 +442,26 @@ class StockMainWindow(object):
         # print r
         # print c
 
+    def search(self):
+        content = self.searchEdit.text().toUtf8().data()
+        content = content.replace(' ', '')
+        if not content:
+            return
+        print 'search', content
+
+        if content.isdigit():
+            print 'isNumber'
+            self.updateStockTableProgress(code=content)
+        else:
+            print 'not isNumber'
+            self.updateStockTableProgress(name=content)
+
+        self.showStatusMessage('status', '%s search completed' % content)
+        self.searchEdit.setText('')
+
     def isNumber(self, str):
         """
-        str.isDigit() ：float will be deemed to be str.
+        str.isdigit() ：float will be deemed to be str.
         :param str: any str
         :return: true when the content of str is a number
         """

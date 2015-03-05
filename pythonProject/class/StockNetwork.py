@@ -8,7 +8,7 @@ __history_SH_exchange_extentName__ = 'ss'
 __history_SZ_exchange_extentName__ = 'sz'
 __proxy_addr__ = '127.0.0.1'
 __proxy_port__ = 1080
-__proxy_mode__ = False
+__proxy_mode__ = True
 
 import sys
 import httplib
@@ -123,12 +123,12 @@ def _httpBase_Get(addr, port, timeout, extendStr):
         return response_content
 
 
-def _httpBase_Get_Proxy(url):
+def _httpBase_Get_Proxy(url, timeout=None):
     httpClient = None
     response_response = None
     response_content = None
     try:
-        httpClient = httplib2.Http(proxy_info=httplib2.ProxyInfo(socks.PROXY_TYPE_SOCKS5, __proxy_addr__, __proxy_port__))
+        httpClient = httplib2.Http(proxy_info=httplib2.ProxyInfo(socks.PROXY_TYPE_SOCKS5, __proxy_addr__, __proxy_port__), timeout=timeout)
         print 'StockNetwork: request %s' % url
         response_response, response_content = httpClient.request(url)
 
@@ -151,7 +151,7 @@ def _httpBase_Get_Proxy(url):
 def getAllHistory(code, history_extentName):
     requestStr = '/table.csv?s=%s.%s' % (code, history_extentName)
     if __proxy_mode__:
-        return _httpBase_Get_Proxy('http://' + __history_cvs_addr__ + requestStr)
+        return _httpBase_Get_Proxy('http://' + __history_cvs_addr__ + requestStr, __timeout__)
     else:
         return _httpBase_Get(__history_cvs_addr__, __history_cvs_port__, __timeout__, requestStr)
 
@@ -163,7 +163,7 @@ def getHistoryByStartDate(code, history_extentName, start_date):
                  (code, history_extentName,
                   int(struct_time.tm_mday), int(struct_time.tm_mon) - 1, struct_time.tm_year)
     if __proxy_mode__:
-        return _httpBase_Get_Proxy(requestStr)
+        return _httpBase_Get_Proxy(requestStr, __timeout__)
     else:
         return _httpBase_Get(__history_cvs_addr__, __history_cvs_port__, __timeout__, requestStr)
 

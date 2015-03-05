@@ -226,7 +226,7 @@ class StockDataClass:
             stock_list.append(stock['code'])
         return stock_list
 
-    def getStockInfo_dicORList(self, code=None):
+    def getStockInfo_dicORList(self, code=None, name=None):
         """
         取得股票整体信息
         当code未设置时，返回全部信息
@@ -236,19 +236,21 @@ class StockDataClass:
             print 'StockDataClass: has no connection'
             return None
 
-        if code:
-            try:
-                return self.db[self.stockIndexCollectionName].find({"code": code}, {"_id": 0})[0]
-            except Exception, e:
-                print 'StockDataClass: getStockInfo error : %s' % e
-                print 'StockDataClass: maybe it means %s is not Existing ' % code
-                return None
-        else:
-            stock_list = []
+        stock_list = []
+
+        if not code and not name:
             stock_cursor = self.db[self.stockIndexCollectionName].find({}, {"_id": 0})
-            for stock in stock_cursor:
-                stock_list.append(stock)
-            return stock_list
+
+        if code:
+            stock_cursor = self.db[self.stockIndexCollectionName].find({"code":  {'$regex': code}}, {"_id": 0})
+
+        if name:
+            stock_cursor = self.db[self.stockIndexCollectionName].find({"name": {'$regex': name, '$options': 'i'}}, {"_id": 0})
+
+        for stock in stock_cursor:
+            stock_list.append(stock)
+        return stock_list
+
 
     def initNewStockDetail(self):
         """
