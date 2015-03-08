@@ -168,8 +168,11 @@ class Ui_Form(object):
         palette.setBrush(QtGui.QPalette.Highlight, QtGui.QBrush(QtGui.QColor('mediumpurple')))
         self.stockListWidget.setPalette(palette)
 
+        self.stockListWidget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+
         self.leftVerticalLayout.addWidget(self.stockListWidget)
-        self.stockListWidget.clicked.connect(self.stockListClick)
+        # self.stockListWidget.clicked.connect(self.stockListClick)
+        self.stockListWidget.itemClicked.connect(self.stockListClick2)
         self.stockListWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.stockListWidget.connect(self.stockListWidget,
                                      QtCore.SIGNAL("customContextMenuRequested(QPoint)"),
@@ -179,10 +182,16 @@ class Ui_Form(object):
         self.window.move(self.father.window.pos().x() + 120,
                          self.father.window.pos().y() + 50)
 
-    def stockListClick(self, cellIndex):
-        print u'你选择的是{0}'.format(cellIndex.row())
-        print dir(cellIndex)
-        curListWidgetItem = self.stockListWidget.item(cellIndex.row())
+    # def stockListClick(self, cellIndex):
+    #     print u'你选择的是{0}'.format(cellIndex.row())
+    #     print dir(cellIndex)
+    #     curListWidgetItem = self.stockListWidget.item(cellIndex.row())
+    #     for code, cell in self.cells_dic.iteritems():
+    #         if cell.listWidgetItem == curListWidgetItem:
+    #             print cell.code()
+    #             return
+
+    def stockListClick2(self, curListWidgetItem):
         for code, cell in self.cells_dic.iteritems():
             if cell.listWidgetItem == curListWidgetItem:
                 print cell.code()
@@ -307,13 +316,15 @@ class Ui_Form(object):
         if len(self.cells_dic) == 0:
             self.close()
 
-    def listItemRightClicked(self):
-        print 'right click'
+    def listItemRightClicked(self, QPoint):
+        print 'listItemRightClicked'
+        popMenu = QtGui.QMenu(self.stockListWidget)
+        popMenu.addAction(_fromUtf8("111")).triggered.connect(self.test)
+        popMenu.addAction(_fromUtf8("22222")).triggered.connect(self.test)
+        popMenu.exec_(QtGui.QCursor.pos())
 
     def test(self):
         print 'test'
-
-        print
 
     def _refreshDateWhenLoad(self):
         print 'analysisWindow:refreshDate'

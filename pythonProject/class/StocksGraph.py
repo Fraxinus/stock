@@ -125,7 +125,6 @@ class StocksGraphView(object):
                 label.set_ha('center')
                 label.set_rotation(0)
 
-
     def draw(self):
         self.canvas.draw_idle()
 
