@@ -527,3 +527,5 @@ plt.plot(x, y1, label=u"带噪声的实验数据")
 plt.plot(x, func(x, plsq[0]), label=u"拟合数据")
 plt.legend()
 plt.show()
+
+from scipy.stats import pearsonr

@@ -321,15 +321,14 @@ class StockMainWindow(object):
                                     self.enumStockTableColumn("name")).text().toUtf8().data()
         if not self.StockAnalysisWindow:
             self.StockAnalysisWindow = self._initAnalysisWindow(self)
-            self.StockAnalysisWindow.show()
             self.StockAnalysisWindow.insertStock(code, name)
+            self.StockAnalysisWindow.show()
             self.StockAnalysisWindow.raise_()
         else:
             if self.StockAnalysisWindow.insertStock(code, name):
                 self.StockAnalysisWindow.raise_()
             else:
                 print '弹出警告筐'
-
 
     def _connectDB(self):
         stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)

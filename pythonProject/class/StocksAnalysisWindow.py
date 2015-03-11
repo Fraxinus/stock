@@ -192,10 +192,13 @@ class Ui_Form(object):
     #             return
 
     def stockListClick2(self, curListWidgetItem):
+        print self.getCodeFromListWidgetItem(curListWidgetItem)
+
+    def getCodeFromListWidgetItem(self, listWidgetItem):
         for code, cell in self.cells_dic.iteritems():
-            if cell.listWidgetItem == curListWidgetItem:
-                print cell.code()
-                return
+            if cell.listWidgetItem == listWidgetItem:
+                return cell.code()
+        return None
 
     def insertStock(self, code, name):
         """
@@ -319,9 +322,49 @@ class Ui_Form(object):
     def listItemRightClicked(self, QPoint):
         print 'listItemRightClicked'
         popMenu = QtGui.QMenu(self.stockListWidget)
-        popMenu.addAction(_fromUtf8("111")).triggered.connect(self.test)
-        popMenu.addAction(_fromUtf8("22222")).triggered.connect(self.test)
+        popMenu.addAction(_fromUtf8("similar")).triggered.connect(self.pearsonSimilarWithOther)
+        popMenu.addAction(_fromUtf8("300index similar")).triggered.connect(self.test)
         popMenu.exec_(QtGui.QCursor.pos())
+
+    def pearsonSimilarWithOther(self):
+        # dic = {'high': [], 'adj_close': [], 'volume': [], 'low': [], 'date': [], 'close': [], 'open': []}
+        selecteds = self.stockListWidget.selectedItems()
+        if len(selecteds) < 2 or len(selecteds) == 0:
+            r = QtGui.QMessageBox.warning(self.window, "warning", _fromUtf8("请选择2条"),
+                                          QtGui.QMessageBox.Yes)
+            return
+        code_A = self.getCodeFromListWidgetItem(selecteds[0])
+        code_B = self.getCodeFromListWidgetItem(selecteds[1])
+        data_A = self.stocksDailyData_decomposed_dic[code_A]
+        data_B = self.stocksDailyData_decomposed_dic[code_B]
+
+        print code_A
+        print code_B
+
+        if data_A['date'][0] in data_B['date']:
+            startDate = data_A['date'][0]
+            print 'A min'
+
+        if data_B['date'][0] in data_A['date']:
+            startDate = data_B['date'][0]
+            print 'B min'
+
+        if data_A['date'][len(data_A['date'])-1] in data_B['date']:
+            endDate = data_A['date'][len(data_A['date'])-1]
+            print 'A max'
+
+        if data_B['date'][len(data_B['date'])-1] in data_A['date']:
+            print "xxx" ,data_A['date'][len(data_A['date'])-1]
+            print "xxx" ,data_B['date'][len(data_B['date'])-1]
+            print "xxx" ,data_A
+            print "xxx" ,data_B
+
+            endDate = data_B['date'][len(data_B['date'])-1]
+            print 'B max'
+
+        print startDate
+        print endDate
+
 
     def test(self):
         print 'test'

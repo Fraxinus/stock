@@ -495,6 +495,75 @@ class StockDataClass:
             stock_list.append(stock)
         return stock_list
 
+    def stockIndexCollectionCheckAndRepair(self):
+        """
+        Compare the Collections and stock Index,
+        find out the wrong data in stockIndexCollection.
+        And let them be right.
+        """
+        # logs = []
+        codes = self.getAllStockCode_list()
+        for code in codes:
+            stockInfo = self.db[self.stockIndexCollectionName].find(
+                    {"code":code},{"_id": 0}
+                ).next()
+            if stockInfo['count'] < 5:
+                # logs.append("%s: count less, break" % code)
+                print "%s: count less, break" % code
+                continue
+
+            count = self.db[code].count()
+            org = self.db[code].find({},{"date":1,"close":1,"_id":0}).sort("date", database_m.ASCENDING).limit(1).next()
+            date_org = org["date"]
+            last = self.db[code].find({},{"date":1,"close":1,"_id":0}).sort("date", database_m.DESCENDING).limit(1).next()
+            date_last = last["date"]
+            price_last = last["close"]
+            price_highest = self.db[code].find({},{"close":1,"_id":0}).sort("close", database_m.DESCENDING).limit(1).next()["close"]
+            highest_highest = self.db[code].find({},{"high":1,"_id":0}).sort("high", database_m.DESCENDING).limit(1).next()["high"]
+            if highest_highest > price_highest:
+                price_highest = highest_highest
+
+            haveError = False
+
+            if stockInfo['date_origin'] != date_org:
+                # logs.append("%s: date_origin error, index:%s, doc:%s " % code, stockInfo['date_origin'], date_org)
+                haveError = True
+                print "%s: date_origin error" % code
+                print stockInfo['date_origin'], date_org
+            elif stockInfo['date_last'] != date_last:
+                # logs.append("%s: date_last error, index:%s, doc:%s " % code, stockInfo['date_last'], date_last)
+                haveError = True
+                print "%s: date_last error " % code
+                print stockInfo['date_last'], date_last
+            if stockInfo['count'] != count:
+                # logs.append("%s: count error, index:%s, doc:%s " % code, stockInfo['count'], count)
+                haveError = True
+                print "%s: count error " % code
+                print stockInfo['count'], count
+            if stockInfo['price_highest'] != price_highest:
+                # logs.append("%s: price_highest error, index:%s, doc:%s " % code, stockInfo['price_highest'], price_highest)
+                haveError = True
+                print "%s: price_highest error" % code
+                print stockInfo['price_highest'], price_highest
+            if stockInfo['price_last'] != price_last:
+                # logs.append("%s: price_last error, index:%s, doc:%s " % code, stockInfo['price_last'], price_last)
+                haveError = True
+                print "%s: price_last error" % code
+                print stockInfo['price_last'], price_last
+
+            if haveError:
+                print self.db[self.stockIndexCollectionName].update(
+                    {"code":code},
+                    {"$set":{"count":count, "date_last":date_last, "date_origin":date_org,
+                             "price_last":price_last, "price_highest":price_highest}}
+                )
+            else:
+                print "%s: no error" % code
+
+        # for str in logs:
+        #     print str
+
+
     def stock_test(self):
         # StopIteration
         # print self.db["600001"].find({},{"date":1,"_id":0}).sort("date", database_m.ASCENDING).limit(1).next()["date"]
