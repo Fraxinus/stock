@@ -279,7 +279,7 @@ class StockDataClass:
 
         # #--take the list of stock detail, and find out which stock detail collection hasn`t created
         stock_collection_list = self.getAllStockCollectionsName_list()
-        print 'StockDataClass: new stock list :', stock_collection_list
+        print 'StockDataClass: all stock list :', stock_collection_list
 
         for stock in stock_cursor:
             insert_success_Flag = True

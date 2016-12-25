@@ -98,6 +98,7 @@ stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
 # print 'insertNewDateStockDetail'
 # code_list = stockData.getAllStockCollectionsName_list()
 # print code_list
+# stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list
 # for code in code_list:
 #     stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list
 #     print "results:", stockData.insertFreshDateStockDetail_auto(code)
@@ -105,7 +106,7 @@ stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
 
 # print 'insertNewDateStockDetail'
 # stockData.callback_stockDetail = callback_stockDetail_newFromCodeAndLastDate_list
-# print "resualt:", stockData.insertFreshDateStockDetail_auto("600000")
+# print "resualt:", stockData.insertFreshDateStockDetail_auto("300426")
 
 # print stockData.stockIndexInsertOne('000001','上证指数')
 # print stockData.stockIndexInsertOne('000002','Ａ股指数')
@@ -212,8 +213,8 @@ stockData = StockData.StockDataClass(StockData.ShangHaiStockDB)
 # print stockData.stockIndexInsertOne('888880','新标准券')
 
 #
-stockData.stockIndexCollectionCheckAndRepair()
-if stockData:
-    print stockData
-    stockData = None
+# stockData.stockIndexCollectionCheckAndRepair()
+# if stockData:
+#     print stockData
+#     stockData = None
 

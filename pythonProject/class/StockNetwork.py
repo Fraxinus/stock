@@ -31,8 +31,9 @@ def getAllCode_SZ():
     response_content = None
     try:
         # http://www.szse.cn/szseWeb/FrontController.szse?ACTIONID=8&CATALOGID=1110&TABKEY=tab2&ENCODE=1
-        # httpClient = httplib.HTTPConnection('www.szse.cn', 80, timeout=30)
-        # httpClient.request('GET', '/szseWeb/FrontController.szse?ACTIONID=8&CATALOGID=1110&TABKEY=tab2&ENCODE=1')
+        # http://www.szse.cn/szseWeb/ShowReport.szse?SHOWTYPE=EXCEL&CATALOGID=1110&tab1PAGENUM=1&tab1PAGECOUNT=177&tab1RECORDCOUNT=1761&ENCODE=1&TABKEY=tab1
+        httpClient = httplib.HTTPConnection('www.szse.cn', 80, timeout=30)
+        httpClient.request('GET', '/szseWeb/ShowReport.szse?SHOWTYPE=EXCEL&CATALOGID=1110&tab1PAGENUM=1&tab1PAGECOUNT=177&tab1RECORDCOUNT=1761&ENCODE=1&TABKEY=tab1')
         #response是HTTPResponse对象
         response = httpClient.getresponse()
         response_status = response.status
